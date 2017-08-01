@@ -8,7 +8,7 @@ from youtube import YouTube
 
 # TODO: about window or something of the like that
 #       - credits icons8.com (and loading.io, although CC0) for the yt icon (/ the spinning wheel)
-#       - gives license information (probably GNU?!)
+#       - gives license information (GPL v3)
 
 class DownloadWindow(QtWidgets.QMainWindow):
     def __init__(self):
