@@ -13,8 +13,6 @@ youtube-downloader (GUI) for Windows + Linux (+ macOS), created with PyQt5, pytu
 (extrapolate accordingly for other distros)
 ```
 sudo apt install python3-pip
-```
-```
 sudo pip3 install pytube PyQt5 beautifulsoup4 lxml
 ```
 #### Windows:
