@@ -23,7 +23,7 @@ python -m pip install pytube PyQt5 beautifulsoup4 lxml
 ```
 #### macOS:
 
-idk.
+idk...
 
 ## Launch
 ```
