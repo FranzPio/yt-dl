@@ -201,6 +201,32 @@ class YouTube(QtCore.QObject):
         raise NotImplementedError("Since this application is still under active development, not all features are "
                                   "available yet. Be patient!")
 
+    @staticmethod
+    def _download(video_list, extension="mp4", resolution=None, destination=""):
+        # TODO: "really" do it (put downloading into thread, emit signals, update progress bar etc.)
+        successful_downloads = 0
+        errors = 0
+        for video_info in video_list:
+            print("Downloading", video_info["index"], "of", len(video_list), "...", flush=True)
+            try:
+                yt = pytube.YouTube(video_info["url"])
+                video = yt.get(extension, resolution)
+                video.download(destination)
+            except pytube.exceptions.DoesNotExist:
+                print("An error occurred:\nThe video isn't available in the given format / resolution."
+                      "This happens due to a bug that will be fixed soon.\n", sys.exc_info())
+                errors += 1
+            except Exception:
+                print("An error occurred:\n", sys.exc_info())
+                errors += 1
+            else:
+                successful_downloads += 1
+
+        print(successful_downloads, "of", len(video_list), "videos were downloaded successfully.")
+        if errors:
+            print(errors, "errors occurred.")
+        return
+
         # print("\nThis appears to be a link to a playlist."
         #       "\nThere are ", len(video_list), " videos in it:\n", sep="")
         # time.sleep(2.5)

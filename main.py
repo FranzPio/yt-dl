@@ -115,22 +115,54 @@ class DownloadWindow(QtWidgets.QMainWindow):
         resolutions = self.video_formats[format]
         self.settings_box.resolution_dropdown.addItems(YouTube.prettified(resolutions))
 
-    @staticmethod
-    def create_save_box():
+    def create_save_box(self):
         save_box = QtWidgets.QGroupBox("3. Choose download destination")
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
         hbox2 = QtWidgets.QHBoxLayout()
+        hbox3 = QtWidgets.QHBoxLayout()
+        hbox4 = QtWidgets.QHBoxLayout()
 
         save_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
+        save_box.destination_lbl = QtWidgets.QLabel("(saving to current directory)")
+        save_box.destination_lbl.hide()
+        save_box.download_btn = QtWidgets.QPushButton("DOWNLOAD")
+        save_box.download_btn.clicked.connect(self.on_download_clicked)
+        save_box.download_btn.hide()
+        save_box.loading_indicator = QtWidgets.QLabel()
+        save_box.spinning_wheel = QtGui.QMovie("rolling.gif")
+        save_box.spinning_wheel.setScaledSize(QtCore.QSize(26, 26))
+        save_box.note_lbl = QtWidgets.QLabel("NOTE: This is a TEMPORARY solution just to make it work.")
+        save_box.note_lbl.setWordWrap(True)
+        save_box.note_lbl.hide()
 
         hbox1.addWidget(save_box.continue_msg)
         vbox.addLayout(hbox1)
+        hbox2.addWidget(save_box.destination_lbl)
+        vbox.addLayout(hbox2)
+        hbox3.addWidget(save_box.download_btn)
+        hbox3.addSpacing(5)
+        hbox3.addWidget(save_box.loading_indicator)
+        vbox.addSpacing(5)
+        vbox.addLayout(hbox3)
+        hbox4.addWidget(save_box.note_lbl)
+        vbox.addSpacing(5)
+        vbox.addLayout(hbox4)
 
         save_box.setLayout(vbox)
 
         return save_box
+
+    def on_download_clicked(self):
+        extension = YouTube.uglified(self.settings_box.format_dropdown.currentText())
+        resolution = YouTube.uglified(self.settings_box.resolution_dropdown.currentText())
+        # self.save_box.loading_indicator.setMovie(self.save_box.spinning_wheel)
+        # self.save_box.spinning_wheel.start()
+        # TODO: later only download those videos actually checked in the QListWidget!
+        YouTube._download(self.videos, extension, resolution)
+        # self.save_box.spinning_wheel.stop()
+        # self.save_box.loading_indicator.stop()
 
     @staticmethod
     def create_convert_box():
@@ -205,13 +237,24 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.settings_box.continue_msg.hide()
             self.settings_box.format_dropdown.show()
             self.settings_box.resolution_dropdown.show()
+            self.save_box.continue_msg.hide()
+            self.save_box.destination_lbl.show()
+            self.save_box.download_btn.show()
+            self.save_box.note_lbl.show()
 
+            self.videos = videos
         else:
             self.settings_box.format_dropdown.addItems(YouTube.formats.values())
             self.settings_box.resolution_dropdown.addItems(YouTube.resolutions.values())
             self.settings_box.continue_msg.hide()
             self.settings_box.format_dropdown.show()
             self.settings_box.resolution_dropdown.show()
+            self.save_box.continue_msg.hide()
+            self.save_box.destination_lbl.show()
+            self.save_box.download_btn.show()
+            self.save_box.note_lbl.show()
+
+            self.videos = videos
 
     def on_thread_finished(self):
         self.url_box.spinning_wheel.stop()
