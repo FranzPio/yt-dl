@@ -218,6 +218,25 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.url_box.videos_list_widget.addItem(video_item)
             self.url_box.videos_list_widget.show()
 
+            for i in video_info["formats"]:
+                print(i.resolution)
+
+            # TODO: find a *nice* solution to properly handle single videos / playlists
+            # seems "pytube.YouTube.get_videos()" returns "pytube.models.Video" objects (-> video_info["formats"])
+            # which already have attributes title (= "filename"), format (= "extension") + quality (= "resolution"),
+            # even contain the "real" URL of the actual video
+            # and have a "download" method providing on_progress "signals" that could be used to update a progress bar.
+
+            # problem: it takes too long to get Video objects for every playlist member at once,
+            #          although it works for single videos (and is necessary to display available formats / resolutions)
+            #          (those nested dicts are ugly af and unnecessary...)
+            #          how should "on_success" differentiate between a single video (Video object) and playlist members?
+
+            # solution: data has to be stored differently (obviously a list won't do...objects? -> wrap Video class)
+            #           OR (even better) split up "success" signal into e.g. "playlist_success" and "video_success"
+            #           that have different slots handling those different data types differently.
+            #           (actually no QListWidget is needed for a single video -> could be changed with this approach)
+
         if len(videos) == 1:
             self.video_formats = collections.OrderedDict()
             for format in YouTube.formats.keys():
