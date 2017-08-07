@@ -159,7 +159,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         resolution = YouTube.uglify(self.settings_box.resolution_dropdown.currentText())
         # self.save_box.loading_indicator.setMovie(self.save_box.spinning_wheel)
         # self.save_box.spinning_wheel.start()
-        # TODO: later only download those videos actually checked in the QListWidget!
+        # TODO: later only download those videos actually checked in the QListWidget
         YouTube._download(self.videos, extension, resolution)
         # self.save_box.spinning_wheel.stop()
         # self.save_box.loading_indicator.stop()
