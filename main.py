@@ -111,9 +111,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     def on_format_changed(self, new_format):
         self.settings_box.resolution_dropdown.clear()
-        format = YouTube.uglified(new_format)
+        format = YouTube.uglify(new_format)
         resolutions = self.video_formats[format]
-        self.settings_box.resolution_dropdown.addItems(YouTube.prettified(resolutions))
+        self.settings_box.resolution_dropdown.addItems(YouTube.prettify(resolutions))
 
     def create_save_box(self):
         save_box = QtWidgets.QGroupBox("3. Choose download destination")
@@ -155,8 +155,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         return save_box
 
     def on_download_clicked(self):
-        extension = YouTube.uglified(self.settings_box.format_dropdown.currentText())
-        resolution = YouTube.uglified(self.settings_box.resolution_dropdown.currentText())
+        extension = YouTube.uglify(self.settings_box.format_dropdown.currentText())
+        resolution = YouTube.uglify(self.settings_box.resolution_dropdown.currentText())
         # self.save_box.loading_indicator.setMovie(self.save_box.spinning_wheel)
         # self.save_box.spinning_wheel.start()
         # TODO: later only download those videos actually checked in the QListWidget!
@@ -197,7 +197,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.threads_workers.update({"thread": thread, "worker": yt})
         yt.moveToThread(thread)
         yt.finished.connect(thread.quit)
-        yt.success.connect(self.on_success)
+        yt.videos_found.connect(self.on_videos_found)
+        yt.playlist_found.connect(self.on_playlist_found)
         yt.error.connect(self.on_error)
 
         thread.started.connect(yt.find_videos)
@@ -205,7 +206,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         thread.start()
 
-    def on_success(self, videos):
+    def on_videos_found(self, videos):
         self.url_box.videos_list_widget.clear()
         self.settings_box.format_dropdown.clear()
         self.settings_box.resolution_dropdown.clear()
@@ -237,43 +238,63 @@ class DownloadWindow(QtWidgets.QMainWindow):
             #           that have different slots handling those different data types differently.
             #           (actually no QListWidget is needed for a single video -> could be changed with this approach)
 
-        if len(videos) == 1:
-            self.video_formats = collections.OrderedDict()
-            for format in YouTube.formats.keys():
-                self.video_formats.update({format: []})
-                for video in videos[0]["formats"]:
-                    if format in str(video):
-                        for resolution in YouTube.resolutions.keys():
-                            if resolution in str(video):
-                                self.video_formats[format].append(resolution)
+        self.video_formats = collections.OrderedDict()
+        for format in YouTube.formats.keys():
+            self.video_formats.update({format: []})
+            for video in videos[0]["formats"]:
+                if format in str(video):
+                    for resolution in YouTube.resolutions.keys():
+                        if resolution in str(video):
+                            self.video_formats[format].append(resolution)
 
-            for format, resolution in self.video_formats.items():
-                if not resolution:
-                    self.video_formats.pop(format)
+        for format, resolution in self.video_formats.items():
+            if not resolution:
+                self.video_formats.pop(format)
 
-            self.settings_box.format_dropdown.addItems(YouTube.prettified(self.video_formats).keys())
-            self.settings_box.resolution_dropdown.addItems(list(YouTube.prettified(self.video_formats).values())[0])
-            self.settings_box.continue_msg.hide()
-            self.settings_box.format_dropdown.show()
-            self.settings_box.resolution_dropdown.show()
-            self.save_box.continue_msg.hide()
-            self.save_box.destination_lbl.show()
-            self.save_box.download_btn.show()
-            self.save_box.note_lbl.show()
+        prettified_formats = YouTube.prettify(self.video_formats)
+        self.settings_box.format_dropdown.addItems(prettified_formats.keys())
+        self.settings_box.resolution_dropdown.addItems(list(prettified_formats.values())[0])
 
-            self.videos = videos
-        else:
-            self.settings_box.format_dropdown.addItems(YouTube.formats.values())
-            self.settings_box.resolution_dropdown.addItems(YouTube.resolutions.values())
-            self.settings_box.continue_msg.hide()
-            self.settings_box.format_dropdown.show()
-            self.settings_box.resolution_dropdown.show()
-            self.save_box.continue_msg.hide()
-            self.save_box.destination_lbl.show()
-            self.save_box.download_btn.show()
-            self.save_box.note_lbl.show()
+        self.settings_box.continue_msg.hide()
+        self.settings_box.format_dropdown.show()
+        self.settings_box.resolution_dropdown.show()
+        self.save_box.continue_msg.hide()
+        self.save_box.destination_lbl.show()
+        self.save_box.download_btn.show()
+        self.save_box.note_lbl.show()
 
-            self.videos = videos
+        self.videos = videos
+
+    def on_playlist_found(self, videos):
+        self.url_box.videos_list_widget.clear()
+        self.settings_box.format_dropdown.clear()
+        self.settings_box.resolution_dropdown.clear()
+
+        for index, video_info in enumerate(videos):
+            video_item = QtWidgets.QListWidgetItem()
+            video_item.setText(str(index + 1) + " - " + video_info[0])
+            video_item.setFlags(video_item.flags() | QtCore.Qt.ItemIsUserCheckable)
+            video_item.setCheckState(QtCore.Qt.Checked)
+            self.url_box.videos_list_widget.addItem(video_item)
+            self.url_box.videos_list_widget.show()
+
+        self.video_formats = YouTube.standard_formats
+
+        prettified_formats = YouTube.prettify(self.video_formats)
+        self.settings_box.format_dropdown.addItems(prettified_formats.keys())
+        self.settings_box.resolution_dropdown.addItems(list(prettified_formats.values())[0])
+
+        self.settings_box.continue_msg.hide()
+        self.settings_box.format_dropdown.show()
+        self.settings_box.resolution_dropdown.show()
+        self.save_box.continue_msg.hide()
+        self.save_box.destination_lbl.show()
+        self.save_box.download_btn.show()
+        self.save_box.note_lbl.show()
+
+        # TODO: as QListWidget + settings box have been updated, "yt.get_videos()" could silently be called in a thread
+        #       and in the background create a list of "pytube.models.Video" objects
+        #       whose file size (+ extension / resolution) the QListWidget could be updated with when thread finishes
 
     def on_thread_finished(self):
         self.url_box.spinning_wheel.stop()

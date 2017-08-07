@@ -24,7 +24,8 @@ class YouTube(QtCore.QObject):
                                                 ("3gp", ["144p", "240p"])])
 
     finished = QtCore.pyqtSignal()
-    success = QtCore.pyqtSignal(list)
+    videos_found = QtCore.pyqtSignal(list)
+    playlist_found = QtCore.pyqtSignal(list)
     error = QtCore.pyqtSignal(str, tuple)
     critical_error = QtCore.pyqtSignal(str, tuple)
 
@@ -35,102 +36,52 @@ class YouTube(QtCore.QObject):
     def find_videos(self):
         try:
             yt = pytube.YouTube(self.page_url)
-            available_formats = yt.get_videos()
-            videos = [{"index": 1, "title": yt.title, "url": yt.url, "formats": available_formats}]
-            self.success.emit(videos)
+            videos = yt.get_videos()
+            self.videos_found.emit(videos)
             self.finished.emit()
-            return
         except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
             try:
                 yt = pytube.YouTube("https://" + self.page_url)
-                available_formats = yt.get_videos()
-                videos = [{"index": 1, "title": yt.title, "url": yt.url, "formats": available_formats}]
-                self.success.emit(videos)
+                videos = yt.get_videos()
+                self.videos_found.emit(videos)
                 self.finished.emit()
-                return
             except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
                 error = "Invalid url: no videos were found. Check url for typos."
                 self.error.emit(error, sys.exc_info())
                 self.finished.emit()
-                return
             except pytube.exceptions.AgeRestricted:
                 # the video could be age restricted OR we're maybe dealing with a playlist
-                page_html = urllib.request.urlopen("https://" + self.page_url).read()
-                page_soup = bs4.BeautifulSoup(page_html, "lxml")
+                self.find_playlist("https://" + self.page_url)
+                self.finished.emit()
 
-                index = 1
-
-                playlist_html = page_soup.find_all(
-                    "a", attrs={"class": "pl-video-title-link yt-uix-tile-link yt-uix-sessionlink spf-link "})
-
-                if not playlist_html:
-                    error = "This video is age-restricted. It cannot be downloaded as this is not supported yet."
-                    self.error.emit(error, sys.exc_info())
-                    self.finished.emit()
-                    return
-                else:
-                    videos = []
-                    for a in playlist_html:
-                        videos.append({"index": index, "title": a.string.strip(),
-                                       "url": "https://www.youtube.com" + a.get("href")})
-                        index += 1
-
-                    self.success.emit(videos)
-                    self.finished.emit()
-                    return
         except (pytube.exceptions.CipherError, pytube.exceptions.ExtractorError):
             error = "An error occurred. Couldn't get video(s). Try another url."
             self.critical_error.emit(error, sys.exc_info())
             self.finished.emit()
-            return
         except pytube.exceptions.AgeRestricted:
             # the video could be age restricted OR we're maybe dealing with a playlist
+            self.find_playlist(self.page_url)
+            self.finished.emit()
 
-            page_html = urllib.request.urlopen(self.page_url).read()
-            page_soup = bs4.BeautifulSoup(page_html, "lxml")
+    def find_playlist(self, url):
+        page_html = urllib.request.urlopen(url).read()
+        page_soup = bs4.BeautifulSoup(page_html, "lxml")
 
-            index = 1
+        playlist_html = page_soup.find_all(
+            "a", attrs={"class": "pl-video-title-link yt-uix-tile-link yt-uix-sessionlink spf-link "})
 
-            playlist_html = page_soup.find_all(
-                "a", attrs={"class": "pl-video-title-link yt-uix-tile-link yt-uix-sessionlink spf-link "})
+        if not playlist_html:
+            error = "This video is age-restricted. It cannot be downloaded as this is not supported yet."
+            self.error.emit(error, sys.exc_info())
+        else:
+            videos = []
+            for a in playlist_html:
+                videos.append((a.string.strip(), "https://www.youtube.com" + a.get("href")))
 
-            if not playlist_html:
-                error = "This video is age-restricted. It cannot be downloaded as this is not supported yet."
-                self.error.emit(error, sys.exc_info())
-                self.finished.emit()
-                return
-            else:
-                videos = []
-                for a in playlist_html:
-                    videos.append({"index": index, "title": a.string.strip(),
-                                   "url": "https://www.youtube.com" + a.get("href")})
-                    index += 1
-
-                self.success.emit(videos)
-                self.finished.emit()
-                return
-
-                # print("\nThere are ", len(available_formats), " video formats are available:\n", sep="")
-                # for index, format in enumerate(available_formats):
-                #     print(index, "-", format)
-                # while True:
-                #     print("\nNow choose your desired format.\n")
-                #     print("extension (e.g. \"mp4\", \"3gp\", \"flv\", \"webm\"):")
-                #     extension = input("> ")
-                #     print("\nresolution (e.g. \"144p\", \"360p\", \"720p\"):")
-                #     resolution = input("> ")
-                #     try:
-                #         video = yt.get(extension, resolution)
-                #         break
-                #     except pytube.exceptions.DoesNotExist:
-                #         print("\n\033[31mNo videos met these criteria. Check the extension and resolution you entered.\033[0m")
-                # print("\nYour video is being downloaded, please wait...")
-                # video.download("")
-                # print("\n-----------------------------------"
-                #       "\nSuccessfully downloaded video.\n")
+            self.playlist_found.emit(videos)
 
     @staticmethod
-    def prettified(video_formats):
+    def prettify(video_formats):
         format_dict = YouTube.formats
         resolution_dict = YouTube.resolutions
 
@@ -161,7 +112,7 @@ class YouTube(QtCore.QObject):
             return None
 
     @staticmethod
-    def uglified(video_formats):
+    def uglify(video_formats):
         reversed_format_dict = collections.OrderedDict((value, key) for key, value in YouTube.formats.items())
         reversed_resolution_dict = collections.OrderedDict((value, key) for key, value in YouTube.resolutions.items())
 
