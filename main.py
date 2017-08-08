@@ -211,6 +211,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.settings_box.format_dropdown.clear()
         self.settings_box.resolution_dropdown.clear()
 
+        # TODO: this doesn't have to be a QListWidget anymore since we can be sure to get only one video
         for video_info in videos:
             video_item = QtWidgets.QListWidgetItem()
             video_item.setText(str(video_info["index"]) + " - " + video_info["title"])
