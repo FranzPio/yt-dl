@@ -143,7 +143,7 @@ class YouTube(QtCore.QObject):
             return None
 
     @staticmethod
-    def download_video(video, extension="mp4", resolution=None, destination=""):
+    def download_video(video_list, extension="mp4", resolution=None, destination=""):
         raise NotImplementedError("Since this application is still under active development, not all features are "
                                   "available yet. Be patient!")
 
@@ -153,14 +153,35 @@ class YouTube(QtCore.QObject):
                                   "available yet. Be patient!")
 
     @staticmethod
-    def _download(video_list, extension="mp4", resolution=None, destination=""):
+    def _download_video(video_list, extension, resolution, destination=""):
         # TODO: "really" do it (put downloading into thread, emit signals, update progress bar etc.)
         successful_downloads = 0
         errors = 0
-        for video_info in video_list:
-            print("Downloading", video_info["index"], "of", len(video_list), "...", flush=True)
+        print("Downloading ", "1", "of", "1", "...", flush=True)
+        try:
+            for video in video_list:
+                if video.extension == extension and video.resolution == resolution:
+                    video.download(destination)
+                    break
+        except Exception:
+            print("An error occurred:\n", sys.exc_info())
+            errors += 1
+        else:
+            successful_downloads += 1
+
+        print(successful_downloads, "of", "1", "videos were downloaded successfully.")
+        if errors:
+            print(errors, "errors occurred.")
+        return
+
+    @staticmethod
+    def _download_playlist(video_list, extension, resolution, destination=""):
+        successful_downloads = 0
+        errors = 0
+        for index, video in enumerate(video_list):
+            print("Downloading", index + 1, "of", len(video_list), "...", flush=True)
             try:
-                yt = pytube.YouTube(video_info["url"])
+                yt = pytube.YouTube(video[1])
                 video = yt.get(extension, resolution)
                 video.download(destination)
             except pytube.exceptions.DoesNotExist:
@@ -177,75 +198,3 @@ class YouTube(QtCore.QObject):
         if errors:
             print(errors, "errors occurred.")
         return
-
-        # print("\nThis appears to be a link to a playlist."
-        #       "\nThere are ", len(video_list), " videos in it:\n", sep="")
-        # time.sleep(2.5)
-        # print("------------------------------")
-        # for video in video_list:
-        #     print(video["index"], ". ", video["title"], sep="")
-        # print("------------------------------")
-        # print("\nNow choose your desired format.\n"
-        #       "If that format does not exist, an mp4 with the highest resolution available will be downloaded.\n")
-        # print("extension (e.g. \"mp4\", \"3gp\", \"flv\", \"webm\"):")
-        # extension = input("> ")
-        # print("\nresolution (e.g. \"144p\", \"360p\", \"720p\"):")
-        # resolution = input("> ")
-
-        # error_list = []
-        # os_error_list = []
-        # age_restricted_list = []
-        # successful_downloads = 0
-        #
-        # print("\n", len(video_list), " videos are being downloaded, please wait...\n", sep="")
-        # print(successful_downloads, " / ", len(video_list), " downloaded successfully | ",
-        #       len(error_list) + len(os_error_list) + len(age_restricted_list), " error(s) occurred",
-        #       sep="", end="\r", flush=True)
-        #
-        # for video in video_list:
-        #     try:
-        #         yt = pytube.YouTube(video["url"])
-        #         video = yt.get(extension, resolution)
-        #         video.download(destination)
-        #         successful_downloads += 1
-        #     except pytube.exceptions.DoesNotExist:
-        #         try:
-        #             yt = pytube.YouTube(video["url"])
-        #             video = yt.get(extension, resolution)
-        #             video.download(destination)
-        #             successful_downloads += 1
-        #         except (pytube.exceptions.PytubeError, pytube.exceptions.CipherError, pytube.exceptions.ExtractorError):
-        #             error_list.append(video)
-        #             continue
-        #     except (pytube.exceptions.PytubeError, pytube.exceptions.CipherError, pytube.exceptions.ExtractorError):
-        #         error_list.append(video)
-        #         continue
-        #     except pytube.exceptions.AgeRestricted:
-        #         age_restricted_list.append(video)
-        #         continue
-        #     except OSError:
-        #         os_error_list.append(video)
-        #         continue
-        #     finally:
-        #         #        (prints on the same line without flushing the old stuff / prints nothing)
-        #         # print(successful_downloads, " / ", len(video_list), " downloaded successfully | ",
-        #         #       len(error_list) + len(os_error_list) + len(age_restricted_list), " error(s) occurred",
-        #         #       sep="", end="\r", flush=True)
-        #         pass  # TODO: later some progress bar should be updated at this point
-        #
-        # print("\n-----------------------------------"
-        #       "\nSuccessfully downloaded ", successful_downloads, " videos.\n", sep="")
-        # if error_list:
-        #     print(len(error_list), " video(s) couldn't be downloaded because an unexpected error occurred.\n", sep="")
-        # if os_error_list:
-        #     print(len(os_error_list), " video(s) couldn't be downloaded because\n"
-        #                               "- the filename already exists\n"
-        #                               "- you don't have write permission to the current working directory\n"
-        #                               "- or some other weird OSError occurred\n", sep="")
-        # if age_restricted_list:
-        #     print(len(age_restricted_list), " video(s) couldn't be downloaded because of age restrictions.\n", sep="")
-
-
-# def start():
-#     print("Enter the YouTube url of a video or playlist to continue:\n")
-#     return input("> ")

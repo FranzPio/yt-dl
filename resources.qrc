@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>resources/youtube_icon.ico</file>
+    <file>resources/youtube_splash_screen.png</file>
+    <file>resources/rolling.gif</file>
+</qresource>
+</RCC>

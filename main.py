@@ -4,6 +4,7 @@ import sys
 import traceback
 import collections.abc
 from youtube import YouTube
+import resources
 
 
 # TODO: about window or something of the like that
@@ -45,7 +46,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         widget.setLayout(big_vbox)
         self.setCentralWidget(widget)
 
-        self.setWindowIcon(QtGui.QIcon("youtube_icon.ico"))
+        self.setWindowIcon(QtGui.QIcon(":/resources/youtube_icon.ico"))
 
     def create_url_box(self):
         url_box = QtWidgets.QGroupBox("1. Enter URL")
@@ -61,7 +62,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         url_box.get_videos_btn.setDefault(True)
         url_box.get_videos_btn.clicked.connect(lambda: self.get_videos_from_url(url_box.url_ledit.text()))
         url_box.loading_indicator = QtWidgets.QLabel()
-        url_box.spinning_wheel = QtGui.QMovie("rolling.gif")
+        url_box.spinning_wheel = QtGui.QMovie(":/resources/rolling.gif")
         url_box.spinning_wheel.setScaledSize(QtCore.QSize(26, 26))
         # url_box.loading_indicator.setMovie(url_box.spinning_wheel)
         url_box.videos_list_widget = QtWidgets.QListWidget()
@@ -124,14 +125,19 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox3 = QtWidgets.QHBoxLayout()
         hbox4 = QtWidgets.QHBoxLayout()
 
+        # TODO: don't just save it anywhere, but open a QFileDialog to select the desired download destination
         save_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
-        save_box.destination_lbl = QtWidgets.QLabel("(saving to current directory)")
+        save_box.destination_lbl = QtWidgets.QLabel("video(s) will be saved to current working directory")
+        save_box.destination_lbl.setWordWrap(True)
         save_box.destination_lbl.hide()
+        # save_box.destination_ledit = QtWidgets.QLineEdit()
+        # save_box.destination_ledit.setReadOnly(True)
+        # save_box.destination_ledit.hide()
         save_box.download_btn = QtWidgets.QPushButton("DOWNLOAD")
         save_box.download_btn.clicked.connect(self.on_download_clicked)
         save_box.download_btn.hide()
         save_box.loading_indicator = QtWidgets.QLabel()
-        save_box.spinning_wheel = QtGui.QMovie("rolling.gif")
+        save_box.spinning_wheel = QtGui.QMovie(":/resources/rolling.gif")
         save_box.spinning_wheel.setScaledSize(QtCore.QSize(26, 26))
         save_box.note_lbl = QtWidgets.QLabel("NOTE: This is a TEMPORARY solution just to make it work.")
         save_box.note_lbl.setWordWrap(True)
@@ -139,6 +145,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         hbox1.addWidget(save_box.continue_msg)
         vbox.addLayout(hbox1)
+        # hbox2.addWidget(save_box.destination_ledit)
         hbox2.addWidget(save_box.destination_lbl)
         vbox.addLayout(hbox2)
         hbox3.addWidget(save_box.download_btn)
@@ -159,8 +166,19 @@ class DownloadWindow(QtWidgets.QMainWindow):
         resolution = YouTube.uglify(self.settings_box.resolution_dropdown.currentText())
         # self.save_box.loading_indicator.setMovie(self.save_box.spinning_wheel)
         # self.save_box.spinning_wheel.start()
-        # TODO: later only download those videos actually checked in the QListWidget
-        YouTube._download(self.videos, extension, resolution)
+
+        if len(self.url_box.videos_list_widget) < 1:
+            return
+        elif len(self.url_box.videos_list_widget) == 1:
+            if self.url_box.videos_list_widget.item(0).checkState() == QtCore.Qt.Checked:
+                YouTube._download_video(self.videos, extension, resolution)
+            return
+        else:
+            # TODO: check if item is checked for each video and pass a list of only those checked
+            #       (see https://stackoverflow.com/questions/2191699/find-an-element-in-a-list-of-tuples)
+            YouTube._download_playlist(self.playlist_videos, extension, resolution)
+            return
+
         # self.save_box.spinning_wheel.stop()
         # self.save_box.loading_indicator.stop()
 
@@ -212,42 +230,35 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.settings_box.resolution_dropdown.clear()
 
         # TODO: this doesn't have to be a QListWidget anymore since we can be sure to get only one video
-        for video_info in videos:
-            video_item = QtWidgets.QListWidgetItem()
-            video_item.setText(str(video_info["index"]) + " - " + video_info["title"])
-            video_item.setFlags(video_item.flags() | QtCore.Qt.ItemIsUserCheckable)
-            video_item.setCheckState(QtCore.Qt.Checked)
-            self.url_box.videos_list_widget.addItem(video_item)
-            self.url_box.videos_list_widget.show()
+        video_item = QtWidgets.QListWidgetItem()
+        video_item.setText("1 - " + videos[0].filename)
+        video_item.setFlags(video_item.flags() | QtCore.Qt.ItemIsUserCheckable)
+        video_item.setCheckState(QtCore.Qt.Checked)
+        self.url_box.videos_list_widget.addItem(video_item)
+        self.url_box.videos_list_widget.show()
 
-            for i in video_info["formats"]:
-                print(i.resolution)
 
-            # TODO: find a *nice* solution to properly handle single videos / playlists
-            # seems "pytube.YouTube.get_videos()" returns "pytube.models.Video" objects (-> video_info["formats"])
-            # which already have attributes title (= "filename"), format (= "extension") + quality (= "resolution"),
-            # even contain the "real" URL of the actual video
-            # and have a "download" method providing on_progress "signals" that could be used to update a progress bar.
+        # TODO: find a *nice* solution to properly handle single videos / playlists
+        # seems "pytube.YouTube.get_videos()" returns "pytube.models.Video" objects (-> video_info["formats"])
+        # which already have attributes title (= "filename"), format (= "extension") + quality (= "resolution"),
+        # even contain the "real" URL of the actual video
+        # and have a "download" method providing on_progress "signals" that could be used to update a progress bar.
 
-            # problem: it takes too long to get Video objects for every playlist member at once,
-            #          although it works for single videos (and is necessary to display available formats / resolutions)
-            #          (those nested dicts are ugly af and unnecessary...)
-            #          how should "on_success" differentiate between a single video (Video object) and playlist members?
+        # problem: it takes too long to get Video objects for every playlist member at once,
+        #          although it works for single videos (and is necessary to display available formats / resolutions)
+        #          (those nested dicts are ugly af and unnecessary...)
+        #          how should "on_success" differentiate between a single video (Video object) and playlist members?
 
-            # solution: data has to be stored differently (obviously a list won't do...objects? -> wrap Video class)
-            #           OR (even better) split up "success" signal into e.g. "playlist_success" and "video_success"
-            #           that have different slots handling those different data types differently.
-            #           (actually no QListWidget is needed for a single video -> could be changed with this approach)
+        # solution: data has to be stored differently (obviously a list won't do...objects? -> wrap Video class)
+        #           OR (even better) split up "success" signal into e.g. "playlist_success" and "video_success"
+        #           that have different slots handling those different data types differently.
+        #           (actually no QListWidget is needed for a single video -> could be changed with this approach)
 
         self.video_formats = collections.OrderedDict()
         for format in YouTube.formats.keys():
             self.video_formats.update({format: []})
-            for video in videos[0]["formats"]:
-                if format in str(video):
-                    for resolution in YouTube.resolutions.keys():
-                        if resolution in str(video):
-                            self.video_formats[format].append(resolution)
-
+        for video in videos:
+            self.video_formats[video.extension].append(video.resolution)
         for format, resolution in self.video_formats.items():
             if not resolution:
                 self.video_formats.pop(format)
@@ -279,9 +290,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.url_box.videos_list_widget.addItem(video_item)
             self.url_box.videos_list_widget.show()
 
-        self.video_formats = YouTube.standard_formats
-
-        prettified_formats = YouTube.prettify(self.video_formats)
+        prettified_formats = YouTube.prettify(YouTube.standard_formats)
         self.settings_box.format_dropdown.addItems(prettified_formats.keys())
         self.settings_box.resolution_dropdown.addItems(list(prettified_formats.values())[0])
 
@@ -292,6 +301,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.save_box.destination_lbl.show()
         self.save_box.download_btn.show()
         self.save_box.note_lbl.show()
+
+        self.playlist_videos = videos
 
         # TODO: as QListWidget + settings box have been updated, "yt.get_videos()" could silently be called in a thread
         #       and in the background create a list of "pytube.models.Video" objects
@@ -477,7 +488,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
 
-    pixmap = QtGui.QPixmap("youtube_splash_screen.png")
+    pixmap = QtGui.QPixmap(":/resources/youtube_splash_screen.png")
     splashie = QtWidgets.QSplashScreen(pixmap)
     splashie.show()
     app.processEvents()
