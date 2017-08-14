@@ -26,8 +26,10 @@ class YouTube(QtCore.QObject):
     finished = QtCore.pyqtSignal()
     videos_found = QtCore.pyqtSignal(list)
     playlist_found = QtCore.pyqtSignal(list)
+    success = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(str, tuple)
-    critical_error = QtCore.pyqtSignal(str, tuple)
+    # critical_error = QtCore.pyqtSignal(str, tuple)  # later replace this by another argument passed in error.emit()
+                                                      # (e.g. QtWidgets.QMessageBox.Critical)
 
     def __init__(self, page_url):
         super().__init__()
@@ -37,30 +39,28 @@ class YouTube(QtCore.QObject):
         try:
             yt = pytube.YouTube(self.page_url)
             videos = yt.get_videos()
+            self.success.emit()
             self.videos_found.emit(videos)
-            self.finished.emit()
         except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
             try:
                 yt = pytube.YouTube("https://" + self.page_url)
                 videos = yt.get_videos()
+                self.success.emit()
                 self.videos_found.emit(videos)
-                self.finished.emit()
             except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
                 error = "Invalid url: no videos were found. Check url for typos."
                 self.error.emit(error, sys.exc_info())
-                self.finished.emit()
             except pytube.exceptions.AgeRestricted:
                 # the video could be age restricted OR we're maybe dealing with a playlist
                 self.find_playlist("https://" + self.page_url)
-                self.finished.emit()
 
         except (pytube.exceptions.CipherError, pytube.exceptions.ExtractorError):
             error = "An error occurred. Couldn't get video(s). Try another url."
-            self.critical_error.emit(error, sys.exc_info())
-            self.finished.emit()
+            self.error.emit(error, sys.exc_info())
         except pytube.exceptions.AgeRestricted:
             # the video could be age restricted OR we're maybe dealing with a playlist
             self.find_playlist(self.page_url)
+        finally:
             self.finished.emit()
 
     def find_playlist(self, url):
@@ -78,6 +78,7 @@ class YouTube(QtCore.QObject):
             for a in playlist_html:
                 videos.append((a.string.strip(), "https://www.youtube.com" + a.get("href")))
 
+            self.success.emit()
             self.playlist_found.emit(videos)
 
     @staticmethod

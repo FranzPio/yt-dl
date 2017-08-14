@@ -17,6 +17,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         time.sleep(0.7)  # a little time for splashie to be shown (otherwise it just blinks up for a nanosecond...)
 
+        self.videos = None
+        self.playlist_videos = None
         self.video_formats = None
 
         self.init_ui()
@@ -151,10 +153,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox3.addWidget(save_box.download_btn)
         hbox3.addSpacing(5)
         hbox3.addWidget(save_box.loading_indicator)
-        vbox.addSpacing(5)
+        # vbox.addSpacing(5)  # apparently, the spacing is there regardless of whether the hboxes are hidden or not...:(
         vbox.addLayout(hbox3)
         hbox4.addWidget(save_box.note_lbl)
-        vbox.addSpacing(5)
+        # vbox.addSpacing(5)
         vbox.addLayout(hbox4)
 
         save_box.setLayout(vbox)
@@ -188,7 +190,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
-        hbox2 = QtWidgets.QHBoxLayout()
+        # hbox2 = QtWidgets.QHBoxLayout()
 
         convert_box.continue_msg = QtWidgets.QLabel("This feature is not yet available.")
 
@@ -217,6 +219,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         yt.finished.connect(thread.quit)
         yt.videos_found.connect(self.on_videos_found)
         yt.playlist_found.connect(self.on_playlist_found)
+        yt.success.connect(self.on_success)
         yt.error.connect(self.on_error)
 
         thread.started.connect(yt.find_videos)
@@ -225,10 +228,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
         thread.start()
 
     def on_videos_found(self, videos):
-        self.url_box.videos_list_widget.clear()
-        self.settings_box.format_dropdown.clear()
-        self.settings_box.resolution_dropdown.clear()
-
         # TODO: this doesn't have to be a QListWidget anymore since we can be sure to get only one video
         video_item = QtWidgets.QListWidgetItem()
         video_item.setText("1 - " + videos[0].filename)
@@ -236,23 +235,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
         video_item.setCheckState(QtCore.Qt.Checked)
         self.url_box.videos_list_widget.addItem(video_item)
         self.url_box.videos_list_widget.show()
-
-
-        # TODO: find a *nice* solution to properly handle single videos / playlists
-        # seems "pytube.YouTube.get_videos()" returns "pytube.models.Video" objects (-> video_info["formats"])
-        # which already have attributes title (= "filename"), format (= "extension") + quality (= "resolution"),
-        # even contain the "real" URL of the actual video
-        # and have a "download" method providing on_progress "signals" that could be used to update a progress bar.
-
-        # problem: it takes too long to get Video objects for every playlist member at once,
-        #          although it works for single videos (and is necessary to display available formats / resolutions)
-        #          (those nested dicts are ugly af and unnecessary...)
-        #          how should "on_success" differentiate between a single video (Video object) and playlist members?
-
-        # solution: data has to be stored differently (obviously a list won't do...objects? -> wrap Video class)
-        #           OR (even better) split up "success" signal into e.g. "playlist_success" and "video_success"
-        #           that have different slots handling those different data types differently.
-        #           (actually no QListWidget is needed for a single video -> could be changed with this approach)
 
         self.video_formats = collections.OrderedDict()
         for format in YouTube.formats.keys():
@@ -267,21 +249,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.settings_box.format_dropdown.addItems(prettified_formats.keys())
         self.settings_box.resolution_dropdown.addItems(list(prettified_formats.values())[0])
 
-        self.settings_box.continue_msg.hide()
-        self.settings_box.format_dropdown.show()
-        self.settings_box.resolution_dropdown.show()
-        self.save_box.continue_msg.hide()
-        self.save_box.destination_lbl.show()
-        self.save_box.download_btn.show()
-        self.save_box.note_lbl.show()
-
         self.videos = videos
 
     def on_playlist_found(self, videos):
-        self.url_box.videos_list_widget.clear()
-        self.settings_box.format_dropdown.clear()
-        self.settings_box.resolution_dropdown.clear()
-
         for index, video_info in enumerate(videos):
             video_item = QtWidgets.QListWidgetItem()
             video_item.setText(str(index + 1) + " - " + video_info[0])
@@ -290,17 +260,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.url_box.videos_list_widget.addItem(video_item)
             self.url_box.videos_list_widget.show()
 
-        prettified_formats = YouTube.prettify(YouTube.standard_formats)
+        self.video_formats = YouTube.standard_formats
+        prettified_formats = YouTube.prettify(self.video_formats)
         self.settings_box.format_dropdown.addItems(prettified_formats.keys())
         self.settings_box.resolution_dropdown.addItems(list(prettified_formats.values())[0])
-
-        self.settings_box.continue_msg.hide()
-        self.settings_box.format_dropdown.show()
-        self.settings_box.resolution_dropdown.show()
-        self.save_box.continue_msg.hide()
-        self.save_box.destination_lbl.show()
-        self.save_box.download_btn.show()
-        self.save_box.note_lbl.show()
 
         self.playlist_videos = videos
 
@@ -316,6 +279,19 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.url_box.videos_list_widget.setEnabled(True)
         self.settings_box.format_dropdown.setEnabled(True)
         self.settings_box.resolution_dropdown.setEnabled(True)
+
+    def on_success(self):
+        self.url_box.videos_list_widget.clear()
+        self.settings_box.format_dropdown.clear()
+        self.settings_box.resolution_dropdown.clear()
+
+        self.settings_box.continue_msg.hide()
+        self.settings_box.format_dropdown.show()
+        self.settings_box.resolution_dropdown.show()
+        self.save_box.continue_msg.hide()
+        self.save_box.destination_lbl.show()
+        self.save_box.download_btn.show()
+        self.save_box.note_lbl.show()
 
     def on_error(self, error_msg, error_info):
         error_msgbox = QtWidgets.QMessageBox()
