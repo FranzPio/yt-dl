@@ -222,7 +222,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     # TODO: (if supported) set mp3 tags from title + thumbnail as cover
                 except FileNotFoundError:
                     self.on_error("An error occurred. Are you sure ffmpeg is installed?"
-                                  "(put in in your PATH / env to be sure)", sys.exc_info())
+                                  "(put it in your PATH / env to be sure)", sys.exc_info())
                     break
                 except Exception:
                     self.on_error("An unexpected error occurred."
