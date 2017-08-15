@@ -219,6 +219,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                         ffmpeg_executable = "ffmpeg"
                     # TODO: put this in a thread (blocks window) or use async interface (but idk how that works...)
                     subprocess.run([ffmpeg_executable, "-i", path, path.split(".")[0] + ".mp3"])
+                    # TODO: (if supported) set mp3 tags from title + thumbnail as cover
                 except FileNotFoundError:
                     self.on_error("An error occurred. Are you sure ffmpeg is installed?"
                                   "(put in in your PATH / env to be sure)", sys.exc_info())
