@@ -1,6 +1,7 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
 import time
 import sys
+import os.path
 import traceback
 import collections.abc
 from youtube import YouTube
@@ -29,11 +30,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def init_ui(self):
         self.url_box = self.create_url_box()
         self.settings_box = self.create_settings_box()
-        # self.settings_box.quality_dropdown.show()
-        # self.settings_box.format_dropdown.show()
-        # self.settings_box.continue_msg.hide()
         self.save_box = self.create_save_box()
-        # convert_box = self.create_convert_box()
+        self.convert_box = self.create_convert_box()
 
         big_vbox = QtWidgets.QVBoxLayout()
         big_vbox.addWidget(self.url_box)
@@ -41,13 +39,14 @@ class DownloadWindow(QtWidgets.QMainWindow):
         big_vbox.addWidget(self.settings_box)
         big_vbox.addSpacing(15)
         big_vbox.addWidget(self.save_box)
-        # big_vbox.addSpacing(15)
-        # big_vbox.addWidget(convert_box)
+        big_vbox.addSpacing(15)
+        big_vbox.addWidget(self.convert_box)
 
-        widget = QtWidgets.QWidget()
-        widget.setLayout(big_vbox)
-        self.setCentralWidget(widget)
+        self.widget = QtWidgets.QWidget()
+        self.widget.setLayout(big_vbox)
+        self.setCentralWidget(self.widget)
 
+        self.setMinimumSize(395, 400)
         self.setWindowIcon(QtGui.QIcon(":/resources/youtube_icon.ico"))
 
     def create_url_box(self):
@@ -125,11 +124,11 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox1 = QtWidgets.QHBoxLayout()
         hbox2 = QtWidgets.QHBoxLayout()
         hbox3 = QtWidgets.QHBoxLayout()
-        hbox4 = QtWidgets.QHBoxLayout()
 
         # TODO: don't just save it anywhere, but open a QFileDialog to select the desired download destination
         save_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
-        save_box.destination_lbl = QtWidgets.QLabel("video(s) will be saved to current working directory")
+        save_box.destination_lbl = QtWidgets.QLabel("video(s) will be saved to current working directory\n"
+                                                    "NOTE: This is a TEMPORARY solution just to make it work.")
         save_box.destination_lbl.setWordWrap(True)
         save_box.destination_lbl.hide()
         # save_box.destination_ledit = QtWidgets.QLineEdit()
@@ -138,12 +137,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
         save_box.download_btn = QtWidgets.QPushButton("DOWNLOAD")
         save_box.download_btn.clicked.connect(self.on_download_clicked)
         save_box.download_btn.hide()
-        save_box.loading_indicator = QtWidgets.QLabel()
-        save_box.spinning_wheel = QtGui.QMovie(":/resources/rolling.gif")
-        save_box.spinning_wheel.setScaledSize(QtCore.QSize(26, 26))
-        save_box.note_lbl = QtWidgets.QLabel("NOTE: This is a TEMPORARY solution just to make it work.")
-        save_box.note_lbl.setWordWrap(True)
-        save_box.note_lbl.hide()
+        # save_box.loading_indicator = QtWidgets.QLabel()
+        # save_box.spinning_wheel = QtGui.QMovie(":/resources/rolling.gif")
+        # save_box.spinning_wheel.setScaledSize(QtCore.QSize(26, 26))
 
         hbox1.addWidget(save_box.continue_msg)
         vbox.addLayout(hbox1)
@@ -151,13 +147,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox2.addWidget(save_box.destination_lbl)
         vbox.addLayout(hbox2)
         hbox3.addWidget(save_box.download_btn)
-        hbox3.addSpacing(5)
-        hbox3.addWidget(save_box.loading_indicator)
+        # hbox3.addSpacing(5)
+        # hbox3.addWidget(save_box.loading_indicator)
         # vbox.addSpacing(5)  # apparently, the spacing is there regardless of whether the hboxes are hidden or not...:(
         vbox.addLayout(hbox3)
-        hbox4.addWidget(save_box.note_lbl)
-        # vbox.addSpacing(5)
-        vbox.addLayout(hbox4)
 
         save_box.setLayout(vbox)
 
@@ -184,22 +177,56 @@ class DownloadWindow(QtWidgets.QMainWindow):
         # self.save_box.spinning_wheel.stop()
         # self.save_box.loading_indicator.stop()
 
-    @staticmethod
-    def create_convert_box():
+    def create_convert_box(self):
         convert_box = QtWidgets.QGroupBox("4. Convert downloaded file")
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
-        # hbox2 = QtWidgets.QHBoxLayout()
+        hbox2 = QtWidgets.QHBoxLayout()
+        hbox3 = QtWidgets.QHBoxLayout()
 
-        convert_box.continue_msg = QtWidgets.QLabel("This feature is not yet available.")
+        convert_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
+        convert_box.experimental_msg = QtWidgets.QLabel("EXPERIMENTAL: convert video(s) to mp3"
+                                                        "\n(you'll need to have ffmpeg installed for this)")
+        convert_box.experimental_msg.hide()
+        convert_box.convert_btn = QtWidgets.QPushButton("CONVERT")
+        convert_box.convert_btn.clicked.connect(self.on_convert_clicked)
+        convert_box.convert_btn.hide()
 
         hbox1.addWidget(convert_box.continue_msg)
         vbox.addLayout(hbox1)
+        hbox2.addWidget(convert_box.experimental_msg)
+        vbox.addLayout(hbox2)
+        hbox3.addWidget(convert_box.convert_btn)
+        vbox.addLayout(hbox3)
 
         convert_box.setLayout(vbox)
 
         return convert_box
+
+    def on_convert_clicked(self):
+        if YouTube.last_downloaded:
+            import subprocess
+            path_list = []
+            for video in YouTube.last_downloaded:
+                path_list.append(os.path.abspath(video.filename + "." + video.extension))
+            for index, path in enumerate(path_list):
+                print("Converting", index, "of", len(path_list), "...")
+                try:
+                    if sys.platform == "win32":
+                        ffmpeg_executable = os.path.normpath("C://ffmpeg/bin/ffmpeg")
+                    else:
+                        ffmpeg_executable = "ffmpeg"
+                    # TODO: put this in a thread (blocks window) or use async interface (but idk how that works...)
+                    subprocess.run([ffmpeg_executable, "-i", path, path.split(".")[0] + ".mp3"])
+                except FileNotFoundError:
+                    self.on_error("An error occurred. Are you sure ffmpeg is installed?"
+                                  "(put in in your PATH / env to be sure)", sys.exc_info())
+                    break
+                except Exception:
+                    self.on_error("An unexpected error occurred."
+                                  "(See?!? I told you, it's experimental!)", sys.exc_info())
+            print("Finished (more or less) successfully.")
 
     def get_videos_from_url(self, page_url=None):
         # sys.excepthook = lambda *args: print(args)
@@ -279,6 +306,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.url_box.videos_list_widget.setEnabled(True)
         self.settings_box.format_dropdown.setEnabled(True)
         self.settings_box.resolution_dropdown.setEnabled(True)
+        self.resize(self.widget.sizeHint())
 
     def on_success(self):
         self.url_box.videos_list_widget.clear()
@@ -291,9 +319,12 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.save_box.continue_msg.hide()
         self.save_box.destination_lbl.show()
         self.save_box.download_btn.show()
-        self.save_box.note_lbl.show()
+        self.convert_box.continue_msg.hide()
+        self.convert_box.experimental_msg.show()
+        self.convert_box.convert_btn.show()
 
     def on_error(self, error_msg, error_info):
+        # TODO: rename to something less "slot-sounding" as this is a quite convenient method being used elsewhere too
         error_msgbox = QtWidgets.QMessageBox()
         error_msgbox.setWindowTitle("Error")
         error_msgbox.setIcon(QtWidgets.QMessageBox.Warning)

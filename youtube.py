@@ -31,6 +31,8 @@ class YouTube(QtCore.QObject):
     # critical_error = QtCore.pyqtSignal(str, tuple)  # later replace this by another argument passed in error.emit()
                                                       # (e.g. QtWidgets.QMessageBox.Critical)
 
+    last_downloaded = []
+
     def __init__(self, page_url):
         super().__init__()
         self.page_url = page_url
@@ -156,6 +158,7 @@ class YouTube(QtCore.QObject):
     @staticmethod
     def _download_video(video_list, extension, resolution, destination=""):
         # TODO: "really" do it (put downloading into thread, emit signals, update progress bar etc.)
+        YouTube.last_downloaded.clear()
         successful_downloads = 0
         errors = 0
         print("Downloading ", "1", "of", "1", "...", flush=True)
@@ -169,6 +172,7 @@ class YouTube(QtCore.QObject):
             errors += 1
         else:
             successful_downloads += 1
+            YouTube.last_downloaded.append(video)
 
         print(successful_downloads, "of", "1", "videos were downloaded successfully.")
         if errors:
@@ -177,6 +181,7 @@ class YouTube(QtCore.QObject):
 
     @staticmethod
     def _download_playlist(video_list, extension, resolution, destination=""):
+        YouTube.last_downloaded.clear()
         successful_downloads = 0
         errors = 0
         for index, video in enumerate(video_list):
@@ -194,6 +199,7 @@ class YouTube(QtCore.QObject):
                 errors += 1
             else:
                 successful_downloads += 1
+                YouTube.last_downloaded.append(video)
 
         print(successful_downloads, "of", len(video_list), "videos were downloaded successfully.")
         if errors:
