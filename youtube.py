@@ -87,7 +87,9 @@ class YouTube(QtCore.QObject):
     def prettify(video_formats):
         format_dict = YouTube.formats
         resolution_dict = YouTube.resolutions
-
+        # TODO: this is actually a bad thing to do in python.
+        #       check: are any other types than OrderedDicts passed?
+        #       if not; remove this shit, if yes: create separate methods
         if type(video_formats) in (collections.OrderedDict, dict):
             prettified_dict = collections.OrderedDict()
             for format, resolutions in video_formats.items():
