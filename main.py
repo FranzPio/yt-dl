@@ -5,8 +5,11 @@ import os.path
 import traceback
 import collections.abc
 from youtube import YouTube
+from converter import FFmpeg
 import resources
 
+
+# copyright note: YouTube® is a registered trade mark of Google Inc., a subsidiary of Alphabet Inc.
 
 # TODO: about window or something of the like that
 #       - credits icons8.com (and loading.io, although CC0) for the yt icon (/ the spinning wheel)
@@ -167,18 +170,23 @@ class DownloadWindow(QtWidgets.QMainWindow):
         elif len(self.url_box.videos_list_widget) == 1:
             if self.url_box.videos_list_widget.item(0).checkState() == QtCore.Qt.Checked:
                 YouTube._download_video(self.videos, extension, resolution)
-            return
+            else:
+                return
         else:
-            # TODO: check if item is checked for each video and pass a list of only those checked
-            #       (see https://stackoverflow.com/questions/2191699/find-an-element-in-a-list-of-tuples)
-            YouTube._download_playlist(self.playlist_videos, extension, resolution)
-            return
+            checked_videos = []
+            for index, video in enumerate(self.playlist_videos):
+                if self.url_box.videos_list_widget.item(index).checkState() == QtCore.Qt.Checked:
+                    checked_videos.append(self.playlist_videos[index])
+            if checked_videos:
+                YouTube._download_playlist(checked_videos, extension, resolution)
+            else:
+                return
 
         # self.save_box.spinning_wheel.stop()
         # self.save_box.loading_indicator.stop()
 
     def create_convert_box(self):
-        convert_box = QtWidgets.QGroupBox("4. Convert downloaded file")
+        convert_box = QtWidgets.QGroupBox("4. (not really) Convert downloaded file")
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
@@ -186,8 +194,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox3 = QtWidgets.QHBoxLayout()
 
         convert_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
-        convert_box.experimental_msg = QtWidgets.QLabel("EXPERIMENTAL: convert video(s) to mp3"
-                                                        "\n(you'll need to have ffmpeg installed for this)")
+        convert_box.experimental_msg = QtWidgets.QLabel("EXPERIMENTAL: extract audio to file,"
+                                                        "\nconsole window recommended (for now)"
+                                                        "\n(ffprobe + ffmpeg are required for this)")
         convert_box.experimental_msg.hide()
         convert_box.convert_btn = QtWidgets.QPushButton("CONVERT")
         convert_box.convert_btn.clicked.connect(self.on_convert_clicked)
@@ -206,27 +215,15 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     def on_convert_clicked(self):
         if YouTube.last_downloaded:
-            import subprocess
             path_list = []
             for video in YouTube.last_downloaded:
                 path_list.append(os.path.abspath(video.filename + "." + video.extension))
+            # TODO: put this in threads (GUI freezes) or use ffmpeg's async interface (but idk how that works...)
+            #       (+ error slots, progress indicator,...)
             for index, path in enumerate(path_list):
                 print("Converting", index, "of", len(path_list), "...")
-                try:
-                    if sys.platform == "win32":
-                        ffmpeg_executable = os.path.normpath("C://ffmpeg/bin/ffmpeg")
-                    else:
-                        ffmpeg_executable = "ffmpeg"
-                    # TODO: put this in a thread (blocks window) or use async interface (but idk how that works...)
-                    subprocess.run([ffmpeg_executable, "-i", path, path.split(".")[0] + ".mp3"])
-                    # TODO: (if supported) set mp3 tags from title + thumbnail as cover
-                except FileNotFoundError:
-                    self.on_error("An error occurred. Are you sure ffmpeg is installed?"
-                                  "(put it in your PATH / env to be sure)", sys.exc_info())
-                    break
-                except Exception:
-                    self.on_error("An unexpected error occurred."
-                                  "(See?!? I told you, it's experimental!)", sys.exc_info())
+                converter = FFmpeg(path)
+                converter.extract_audio()
             print("Finished (more or less) successfully.")
 
     def get_videos_from_url(self, page_url=None):
@@ -336,161 +333,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
                                      + "".join(traceback.format_tb(error_info[2])))
         error_msgbox.exec()
         # print(error_msg, "\n", error_info, sep="")
-
-
-# class DownloadWizard(QtWidgets.QWizard):
-#
-#     WELCOME_PAGE, URL_PAGE, SETTINGS_PAGE = 0, 1, 2
-#
-#     def __init__(self):
-#         super().__init__()
-#         self.amount_videos = None
-#
-#         self.setPage(self.WELCOME_PAGE, WelcomePage(self))
-#         self.setPage(self.URL_PAGE, URLPage(self))
-#         self.setPage(self.SETTINGS_PAGE, SettingsPage(self))
-#         # self.setStartId(0)
-#
-#         self.setWindowTitle("youtube-downloader [BETA]")
-#         self.setWindowIcon(QtGui.QIcon("youtube_icon.ico"))
-#         self.setWizardStyle(self.ModernStyle)
-#
-#         # side_widget = QtWidgets.QWidget()  # only needed for self.AeroStyle (doesn't display watermark)
-#         # vbox = QtWidgets.QVBoxLayout()
-#         # pixmap = QtGui.QPixmap("youtube.png")
-#         # pixmap_label = QtWidgets.QLabel()
-#         # pixmap_label.setPixmap(pixmap)
-#         # vbox.addWidget(pixmap_label)
-#         # side_widget.setLayout(vbox)
-#         # self.setSideWidget(side_widget))
-#
-#         if sys.platform == "win32":
-#             # self.setWizardStyle(self.AeroStyle)
-#             self.setOption(QtWidgets.QWizard.ExtendedWatermarkPixmap)
-#             self.setFixedSize(590, 348)
-#         else:
-#             self.setFixedSize(645, 397)
-#         self.show()
-#         # print(self.frameSize())
-#
-#
-# class WelcomePage(QtWidgets.QWizardPage):
-#     def __init__(self, parent):
-#         super().__init__()
-#
-#         self.setTitle("Welcome to youtube-downloader!")
-#         # self.setPixmap(QtWidgets.QWizard.BackgroundPixmap, QtGui.QPixmap("youtube_banner.png"))
-#         # -> only used with self.MacStyle
-#         # self.setPixmap(QtWidgets.QWizard.LogoPixmap, QtGui.QPixmap("youtube_banner.png"))
-#         # -> only used when using self.setSubTitle() -> shows banner with this logo
-#         # self.setPixmap(QtWidgets.QWizard.BannerPixmap, QtGui.QPixmap("youtube_banner.png"))
-#         # -> only used when using self.setSubTitle() -> shows banner with this background
-#         self.setPixmap(QtWidgets.QWizard.WatermarkPixmap, QtGui.QPixmap("youtube_banner.png"))
-#
-#         # copyright note: YouTube® and the YouTube logo are registered trade marks of Google Inc.,
-#         #                 a subsidiary of Alphabet Inc.
-#
-#         vbox = QtWidgets.QVBoxLayout()format_dict
-#         welcome_text = QtWidgets.QLabel("This wizard makes downloading your favorite YouTube video "
-#                                         "or playlist really easy.\n\n\n"
-#                                         "You are free to choose between different format and quality settings,\n"
-#                                         "or even convert a downloaded video to an audio file.\n\n\n\n"
-#                                         "Click \"Next\" to continue.\n\n\n")
-#                                         # "Although this program is currently in beta, "
-#                                         # "you can already have a lot of fun with it.\n"
-#                                         # "Feel free to reach out if you have any questions or suggestions "
-#                                         # "on how to make youtube-downloader better.\n"
-#                                         # "I appreciate your feedback!")
-#         welcome_text.setWordWrap(True)
-#         vbox.addWidget(welcome_text)
-#         self.setLayout(vbox)
-#
-#
-# class URLPage(QtWidgets.QWizardPage):
-#     def __init__(self, parent):
-#         super().__init__()
-#
-#         self.parent = parent
-#         self.setTitle("1. Enter a URL")
-#         self.setPixmap(QtWidgets.QWizard.WatermarkPixmap, QtGui.QPixmap("youtube_banner.png"))
-#         vbox = QtWidgets.QVBoxLayout()
-#         hbox1 = QtWidgets.QHBoxLayout()
-#         hbox2 = QtWidgets.QHBoxLayout()
-#         hbox3 = QtWidgets.QHBoxLayout()
-#         url_line_edit = QtWidgets.QLineEdit()
-#         url_line_edit.setPlaceholderText("video or playlist URL")
-#         self.registerField("url*", url_line_edit)
-#         instruction_text = QtWidgets.QLabel("Enter a valid URL of a YouTube video or playlist.\n"
-#                                             "(youtube-downloader will automatically detect what it is)")
-#         warning_text = QtWidgets.QLabel("NOTE: Currently you can't download age-restricted videos!\n"
-#                                         "(this isn't supported by pytube as of version 6.3.0)")
-#         hbox1.addWidget(instruction_text)
-#         vbox.addLayout(hbox1)
-#         vbox.addSpacing(20)
-#         hbox2.addWidget(url_line_edit)
-#         vbox.addLayout(hbox2)
-#         vbox.addSpacing(45)
-#         hbox3.addWidget(warning_text)
-#         vbox.addLayout(hbox3)
-#         self.setLayout(vbox)
-#
-#     def validatePage(self):
-#         global yt_page
-#         url = self.field("url")
-#         yt_page = YouTube(url)
-#         if yt_page.find_videos():
-#             self.parent.amount_videos = len(yt_page.video_list)
-#             return True
-#         else:
-#             return False
-#
-#
-# class SettingsPage(QtWidgets.QWizardPage):
-#     def __init__(self, parent):
-#         global yt_page
-#         super().__init__()
-#
-#         self.parent = parent
-#         self.setTitle("2. Select format and quality")
-#         self.setPixmap(QtWidgets.QWizard.WatermarkPixmap, QtGui.QPixmap("youtube_banner.png"))
-#         vbox = QtWidgets.QVBoxLayout()
-#         hbox1 = QtWidgets.QHBoxLayout()
-#         sorry_text = QtWidgets.QLabel(str(self.parent.amount_videos) + " videos were found.\n\n"
-#                                       "[...]\n\noh no...\n\nSeems QWizard is shit and\n"
-#                                       "I'll have to delete everything I've achieved today and redo it...\n\nUgh...:(")
-#         hbox1.addWidget(sorry_text)
-#         vbox.addLayout(hbox1)
-#         self.setLayout(vbox)
-
-
-# class Worker(QtCore.QObject):
-#
-#     finished = QtCore.pyqtSignal()
-#     status_updated = QtCore.pyqtSignal(str)
-#
-#     def very_long_and_important_calculation(self):
-#         for i in range(5):
-#             time.sleep(1)
-#             # self.status_updated.emit("calculating " + str(i) + " / 5...")
-#
-#         self.finished.emit()
-#
-#     def print_videos_that_were_found(self):
-#         return "great vids"
-#
-#     # code to be in main GUI thread:
-#     # (help from https://stackoverflow.com/questions/6783194/background-thread-with-qthread-in-pyqt)
-#     #
-#     # objThread = QThread()
-#     #
-#     # obj = TestThread()
-#     # obj.moveToThread(objThread)
-#     # obj.finished.connect(objThread.quit)
-#     #
-#     # objThread.started.connect(obj.very_long_and_important_calculation)
-#     # objThread.finished.connect(obj.print_videos_that_were_found)
-#     #
-#     # objThread.start()
 
 
 if __name__ == "__main__":

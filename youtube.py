@@ -6,7 +6,6 @@ import sys
 import collections.abc
 
 
-# TODO: convert downloaded video files (e.g. mp4 to mp3)
 class YouTube(QtCore.QObject):
     resolutions = collections.OrderedDict([("144p", "144p"), ("144p 15 fps", "144p15"), ("240p", "240p"),
                                            ("360p", "SD (360p)"), ("480p", "FWVGA (480p)"),
@@ -17,10 +16,13 @@ class YouTube(QtCore.QObject):
                                            ("2160p-2304p", "4K UHD (2160p-2304p)"),
                                            ("2160p-4320p", "4K UHD (2160p-4320p)")])
 
-    formats = collections.OrderedDict([("mp4", "MPEG-4 AVC / H.264 (.mp4)"), ("webm", "VP9 (.webm)"),
-                                       ("3gp", "MPEG-4 Visual (.3gp)"), ("flv", "Sorenson H.263 (.flv)")])
+    formats = collections.OrderedDict([("mp4", "MPEG-4 AVC / H.264 (.mp4)"),
+                                       ("webm", "VP9 (.webm)"),
+                                       ("3gp", "MPEG-4 Visual (.3gp)"),
+                                       ("flv", "Sorenson H.263 (.flv)")])
 
-    standard_formats = collections.OrderedDict([("mp4", ["360p", "720p"]), ("webm", ["360p"]),
+    standard_formats = collections.OrderedDict([("mp4", ["360p", "720p"]),
+                                                ("webm", ["360p"]),
                                                 ("3gp", ["144p", "240p"])])
 
     finished = QtCore.pyqtSignal()
