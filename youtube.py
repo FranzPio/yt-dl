@@ -1,4 +1,4 @@
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 import pytube, pytube.exceptions
 import urllib.request, urllib.error
 import bs4
@@ -29,7 +29,7 @@ class YouTube(QtCore.QObject):
     videos_found = QtCore.pyqtSignal(list)
     playlist_found = QtCore.pyqtSignal(list)
     success = QtCore.pyqtSignal()
-    error = QtCore.pyqtSignal(str, tuple)
+    error = QtCore.pyqtSignal(str, str, int, tuple, bool)
     # critical_error = QtCore.pyqtSignal(str, tuple)  # later replace this by another argument passed in error.emit()
                                                       # (e.g. QtWidgets.QMessageBox.Critical)
 
@@ -43,27 +43,41 @@ class YouTube(QtCore.QObject):
         try:
             yt = pytube.YouTube(self.page_url)
             videos = yt.get_videos()
-            self.success.emit()
-            self.videos_found.emit(videos)
+            if not videos:
+                self.error.emit("Error", "No URL given. Enter a URL to continue.",
+                                QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+            else:
+                self.success.emit()
+                self.videos_found.emit(videos)
         except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
             try:
                 yt = pytube.YouTube("https://" + self.page_url)
                 videos = yt.get_videos()
-                self.success.emit()
-                self.videos_found.emit(videos)
+                if not videos:
+                    self.error.emit("Error", "No URL given. Enter a URL to continue.",
+                                    QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+                else:
+                    self.success.emit()
+                    self.videos_found.emit(videos)
             except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
-                error = "Invalid url: no videos were found. Check url for typos."
-                self.error.emit(error, sys.exc_info())
+                self.error.emit("Error", "Invalid url: no videos could be found. Check url for typos.",
+                                QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
             except pytube.exceptions.AgeRestricted:
                 # the video could be age restricted OR we're maybe dealing with a playlist
                 self.find_playlist("https://" + self.page_url)
+            except Exception:
+                self.error.emit("Error", "An unexpected error occurred. See below for details.",
+                                QtWidgets.QMessageBox.Critical, sys.exc_info(), True)
 
         except (pytube.exceptions.CipherError, pytube.exceptions.ExtractorError):
-            error = "An error occurred. Couldn't get video(s). Try another url."
-            self.error.emit(error, sys.exc_info())
+            self.error.emit("Error", "An error occurred. Couldn't get video(s). Try another url.",
+                            QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         except pytube.exceptions.AgeRestricted:
             # the video could be age restricted OR we're maybe dealing with a playlist
             self.find_playlist(self.page_url)
+        except Exception:
+            self.error.emit("Error", "An unexpected error occurred. See below for details.",
+                            QtWidgets.QMessageBox.Critical, sys.exc_info(), True)
         finally:
             self.finished.emit()
 
@@ -75,8 +89,8 @@ class YouTube(QtCore.QObject):
             "a", attrs={"class": "pl-video-title-link yt-uix-tile-link yt-uix-sessionlink spf-link "})
 
         if not playlist_html:
-            error = "This video is age-restricted. It cannot be downloaded as this is not supported yet."
-            self.error.emit(error, sys.exc_info())
+            self.error.emit("Error", "This video is age-restricted. This is not supported by pytube as of version 6.4.",
+                            QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         else:
             videos = []
             for a in playlist_html:
@@ -86,68 +100,21 @@ class YouTube(QtCore.QObject):
             self.playlist_found.emit(videos)
 
     @staticmethod
-    def prettify(video_formats):
-        format_dict = YouTube.formats
-        resolution_dict = YouTube.resolutions
-        # TODO: this is actually a bad thing to do in python.
-        #       check: are any other types than OrderedDicts passed?
-        #       if not; remove this shit, if yes: create separate methods
-        if type(video_formats) in (collections.OrderedDict, dict):
-            prettified_dict = collections.OrderedDict()
-            for format, resolutions in video_formats.items():
-                prettified_dict.update({format_dict[format]: []})
-                for resolution in resolutions:
-                    prettified_dict[format_dict[format]].append(resolution_dict[resolution])
-            return prettified_dict
-
-        elif type(video_formats) == str:
-            if video_formats in format_dict.keys():
-                return format_dict[video_formats]
-            elif video_formats in resolution_dict.keys():
-                return resolution_dict[video_formats]
-
-        elif type(video_formats) in (list, tuple):
-            prettified_list = []
-            for format in video_formats:
-                if format in format_dict.keys():
-                    prettified_list.append(format_dict[format])
-                elif format in resolution_dict.keys():
-                    prettified_list.append(resolution_dict[format])
-            return prettified_list
-
-        else:
-            return None
+    def prettify(video_format):
+        if video_format in YouTube.formats.keys():
+            return YouTube.formats[video_format]
+        elif video_format in YouTube.resolutions.keys():
+            return YouTube.resolutions[video_format]
 
     @staticmethod
-    def uglify(video_formats):
+    def uglify(video_format):
         reversed_format_dict = collections.OrderedDict((value, key) for key, value in YouTube.formats.items())
         reversed_resolution_dict = collections.OrderedDict((value, key) for key, value in YouTube.resolutions.items())
 
-        if type(video_formats) in (collections.OrderedDict, dict):
-            uglified_dict = collections.OrderedDict()
-            for format, resolutions in video_formats.items():
-                uglified_dict.update({reversed_format_dict[format]: []})
-                for resolution in resolutions:
-                    uglified_dict[reversed_format_dict[format]].append(reversed_resolution_dict[resolution])
-            return uglified_dict
-
-        elif type(video_formats) == str:
-            if video_formats in reversed_format_dict.keys():
-                return reversed_format_dict[video_formats]
-            elif video_formats in reversed_resolution_dict.keys():
-                return reversed_resolution_dict[video_formats]
-
-        elif type(video_formats) in (list, tuple):
-            uglified_list = []
-            for format in video_formats:
-                if format in reversed_format_dict.keys():
-                    uglified_list.append(reversed_format_dict[format])
-                elif format in reversed_resolution_dict.keys():
-                    uglified_list.append(reversed_resolution_dict[format])
-            return uglified_list
-
-        else:
-            return None
+        if video_format in reversed_format_dict.keys():
+            return reversed_format_dict[video_format]
+        elif video_format in reversed_resolution_dict.keys():
+            return reversed_resolution_dict[video_format]
 
     @staticmethod
     def download_video(video_list, extension="mp4", resolution=None, destination=""):

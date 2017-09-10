@@ -117,8 +117,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def on_format_changed(self, new_format):
         self.settings_box.resolution_dropdown.clear()
         format = YouTube.uglify(new_format)
-        resolutions = self.video_formats[format]
-        self.settings_box.resolution_dropdown.addItems(YouTube.prettify(resolutions))
+        for i in self.video_formats[format]:
+            self.settings_box.resolution_dropdown.addItem(YouTube.prettify(i))
 
     def create_save_box(self):
         save_box = QtWidgets.QGroupBox("3. Choose download destination")
@@ -245,7 +245,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         yt.videos_found.connect(self.on_videos_found)
         yt.playlist_found.connect(self.on_playlist_found)
         yt.success.connect(self.on_success)
-        yt.error.connect(self.on_error)
+        yt.error.connect(self.show_msgbox)
 
         thread.started.connect(yt.find_videos)
         thread.finished.connect(self.on_thread_finished)
@@ -270,9 +270,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
             if not resolution:
                 self.video_formats.pop(format)
 
-        prettified_formats = YouTube.prettify(self.video_formats)
-        self.settings_box.format_dropdown.addItems(prettified_formats.keys())
-        self.settings_box.resolution_dropdown.addItems(list(prettified_formats.values())[0])
+        for i in self.video_formats.keys():
+            self.settings_box.format_dropdown.addItem(YouTube.prettify(i))
+        for i in list(self.video_formats.values())[0]:
+            self.settings_box.resolution_dropdown.addItem(YouTube.prettify(i))
 
         self.videos = videos
 
@@ -286,9 +287,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.url_box.videos_list_widget.show()
 
         self.video_formats = YouTube.standard_formats
-        prettified_formats = YouTube.prettify(self.video_formats)
-        self.settings_box.format_dropdown.addItems(prettified_formats.keys())
-        self.settings_box.resolution_dropdown.addItems(list(prettified_formats.values())[0])
+        for i in self.video_formats.keys():
+            self.settings_box.format_dropdown.addItem(YouTube.prettify(i))
+        for i in list(self.video_formats.values())[0]:
+            self.settings_box.resolution_dropdown.addItem(YouTube.prettify(i))
 
         self.playlist_videos = videos
 
@@ -321,18 +323,20 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.convert_box.experimental_msg.show()
         self.convert_box.convert_btn.show()
 
-    def on_error(self, error_msg, error_info):
-        # TODO: rename to something less "slot-sounding" as this is a quite convenient method being used elsewhere too
-        error_msgbox = QtWidgets.QMessageBox()
-        error_msgbox.setWindowTitle("Error")
-        error_msgbox.setIcon(QtWidgets.QMessageBox.Warning)
-        # error_msgbox.setText("An error occured.")
-        error_msgbox.setText(error_msg)
-        error_msgbox.setDetailedText(str(error_info[0]) + "\n" + str(error_info[1]) + "\n\n"
-                                     + "Traceback (most recent call last):\n"
-                                     + "".join(traceback.format_tb(error_info[2])))
-        error_msgbox.exec()
-        # print(error_msg, "\n", error_info, sep="")
+    @staticmethod
+    def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, detailed_text=None, is_traceback=False):
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setWindowTitle(title)
+        msgbox.setIcon(icon)
+        msgbox.setText(msg)
+        if detailed_text:
+            if is_traceback:
+                msgbox.setDetailedText(str(detailed_text[0]) + "\n" + str(detailed_text[1]) + "\n\n"
+                                       + "Traceback (most recent call last):\n"
+                                       + "".join(traceback.format_tb(detailed_text[2])))
+            else:
+                msgbox.setDetailedText(detailed_text)
+        msgbox.exec()
 
 
 if __name__ == "__main__":

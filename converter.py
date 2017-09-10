@@ -1,4 +1,4 @@
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 import subprocess
 import shutil
 import os
@@ -34,7 +34,7 @@ class FFmpeg(QtCore.QObject):
 
     finished = QtCore.pyqtSignal()
     success = QtCore.pyqtSignal()
-    error = QtCore.pyqtSignal(str)
+    error = QtCore.pyqtSignal(str, str, int, tuple, bool)
 
     def __init__(self, path):
         super().__init__()
@@ -51,10 +51,10 @@ class FFmpeg(QtCore.QObject):
             self.get_audio_codec()
         except FFprobeNotFoundError as error:
             print(error, "\n", sys.exc_info())
-            self.error.emit(error, sys.exc_info())
+            self.error.emit("Error", error, QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         except FFprobeError as error:
             print(error, "\n", sys.exc_info())
-            self.error.emit(error, sys.exc_info())
+            self.error.emit("Error", error, QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         else:
             subprocess.run([self.ffmpeg,
                             "-i", self.path,
@@ -63,6 +63,7 @@ class FFmpeg(QtCore.QObject):
                             self.path.split(".")[0] + self.file_ext])
 
     def get_audio_codec(self):
+        # TODO: testing (stdout decoding seems ewwww...)
         if self.ffprobe:
             process = subprocess.Popen([self.ffprobe,
                                         "-v", "error",
@@ -75,8 +76,6 @@ class FFmpeg(QtCore.QObject):
                 self.audio_codec = stdout.decode("utf-8").strip()  # does that work on Windows?! (stdout encoding different?)
                 self.file_ext = self.codecs.get(self.audio_codec)
             else:
-                error = stderr
-                raise FFprobeError(error)
+                raise FFprobeError(stderr)
         else:
-            error = "Couldn't find ffprobe. Make sure it's installed and in your PATH."
-            raise FFprobeNotFoundError(error)
+            raise FFprobeNotFoundError("Couldn't find ffprobe. Make sure it's installed and in your PATH.")
