@@ -38,7 +38,8 @@ class Update(QtCore.QObject):
         self.new_files = []
         for root, _, files in os.walk(self.dst_folder):
             for file in files:
-                self.new_files.append(os.path.join(root, file))
+                if file not in ("rolling.gif, youtube_icon.ico", "youtube_splash_screen.png", "resources.qrc", "README.md"):
+                    self.new_files.append(os.path.join(root, file))
         new_vfile = None
         for file in self.new_files:
             if file.endswith("version"):
