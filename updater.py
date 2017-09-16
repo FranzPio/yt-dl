@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 import zipfile
 import shutil
-import distutils.version
+from distutils.version import StrictVersion
 
 
 # TODO: support updating if application is frozen (.exe)
@@ -46,9 +46,9 @@ class Update(QtCore.QObject):
         try:
             self.app_path = os.path.dirname(os.path.realpath("version"))
             with open(new_vfile) as vfile1, open(os.path.join(self.app_path, "version")) as vfile2:
-                new_version = distutils.version.StrictVersion(vfile1.read().strip())
-                old_version = distutils.version.StrictVersion(vfile2.read().strip())
-            if new_version > old_version:
+                new_version = vfile1.read().strip()
+                old_version = vfile2.read().strip()
+            if StrictVersion(new_version) > StrictVersion(old_version):
                 self.status_update.emit("4 / 5\nCopying new files...")
                 self.copy_files()
                 self.status_update.emit("5 / 5\nCleaning up...")
