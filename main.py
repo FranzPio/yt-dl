@@ -2,14 +2,83 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 import time
 import sys
 import os.path
+import subprocess
 import traceback
 import collections.abc
 from youtube import YouTube
 from converter import FFmpeg
+from updater import Update
 import resources
 
-
 # copyright note: YouTube® is a registered trade mark of Google Inc., a subsidiary of Alphabet Inc.
+
+
+class UpdateDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.init_ui()
+        self.start_update()
+
+    def init_ui(self):
+        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
+        vbox = QtWidgets.QVBoxLayout()
+
+        self.loading_indicator = QtWidgets.QLabel()
+        self.spinning_wheel = QtGui.QMovie(":/resources/rolling.gif")
+        self.spinning_wheel.setScaledSize(QtCore.QSize(32, 32))
+        self.loading_indicator.setMovie(self.spinning_wheel)
+
+        self.status_lbl = QtWidgets.QLabel()
+        # self.update_dlg.status_lbl.setWordWrap(True)
+
+        vbox.addWidget(self.loading_indicator)
+        vbox.addWidget(self.status_lbl)
+        self.setLayout(vbox)
+
+    def start_update(self):
+        self.spinning_wheel.start()
+
+        self.updater = Update("https://github.com/FranzPio/yt-dl/zipball/master/")
+        self.thread = QtCore.QThread()
+        self.updater.moveToThread(self.thread)
+        self.updater.finished.connect(self.close)
+        self.updater.status_update.connect(self.status_lbl.setText)
+        self.updater.success.connect(self.success)
+        self.updater.error.connect(show_msgbox)
+        self.updater.information.connect(show_msgbox)
+
+        self.thread.started.connect(self.updater.check_for_updates)
+
+        self.thread.start()
+
+    def keyPressEvent(self, evt):
+        if evt.key() == QtCore.Qt.Key_Escape:
+            self.close()
+        else:
+            self.keyPressEvent(evt)
+
+    def closeEvent(self, evt):
+        self.thread.quit()
+        self.thread.wait(100)
+        if not self.thread.isFinished():
+            self.thread.terminate()
+            self.thread.wait(2000)
+        self.close()
+
+    def success(self):
+        self.close()
+        self.restart()
+
+    @staticmethod
+    def restart():
+        QtWidgets.qApp.closeAllWindows()
+        QtWidgets.qApp.quit()
+        if hasattr(sys, "frozen"):
+            filepath = sys.executable
+        else:
+            filepath = [sys.executable, os.path.abspath(__file__)]
+        subprocess.run(filepath)
+
 
 # TODO: about window or something of the like that
 #       - credits icons8.com (and loading.io, although CC0) for the yt icon (/ the spinning wheel)
@@ -31,6 +100,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         splashie.finish(self)
 
     def init_ui(self):
+        self.toolbar = self.create_toolbar()
+
         self.url_box = self.create_url_box()
         self.settings_box = self.create_settings_box()
         self.save_box = self.create_save_box()
@@ -51,6 +122,24 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         self.setMinimumSize(395, 400)
         self.setWindowIcon(QtGui.QIcon(":/resources/youtube_icon.ico"))
+
+    def create_toolbar(self):
+        exit_action = QtWidgets.QAction("&Exit", self)
+        exit_action.setShortcut(QtCore.Qt.ControlModifier | QtCore.Qt.Key_Q)
+        exit_action.triggered.connect(QtWidgets.qApp.quit)
+
+        update_action = QtWidgets.QAction("&Check for updates...", self)
+        update_action.triggered.connect(self.update_dialog)
+
+        menu_bar = self.menuBar()
+        actions_menu = menu_bar.addMenu("&Actions")
+        actions_menu.addAction(exit_action)
+        help_menu = menu_bar.addMenu("&?")
+        help_menu.addAction(update_action)
+
+    def update_dialog(self):
+        update_dlg = UpdateDialog(self)
+        update_dlg.exec()
 
     def create_url_box(self):
         url_box = QtWidgets.QGroupBox("1. Enter URL")
@@ -245,7 +334,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         yt.videos_found.connect(self.on_videos_found)
         yt.playlist_found.connect(self.on_playlist_found)
         yt.success.connect(self.on_success)
-        yt.error.connect(self.show_msgbox)
+        yt.error.connect(show_msgbox)
 
         thread.started.connect(yt.find_videos)
         thread.finished.connect(self.on_thread_finished)
@@ -323,20 +412,20 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.convert_box.experimental_msg.show()
         self.convert_box.convert_btn.show()
 
-    @staticmethod
-    def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, detailed_text=None, is_traceback=False):
-        msgbox = QtWidgets.QMessageBox()
-        msgbox.setWindowTitle(title)
-        msgbox.setIcon(icon)
-        msgbox.setText(msg)
-        if detailed_text:
-            if is_traceback:
-                msgbox.setDetailedText(str(detailed_text[0]) + "\n" + str(detailed_text[1]) + "\n\n"
-                                       + "Traceback (most recent call last):\n"
-                                       + "".join(traceback.format_tb(detailed_text[2])))
-            else:
-                msgbox.setDetailedText(detailed_text)
-        msgbox.exec()
+
+def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, detailed_text=None, is_traceback=False):
+    msgbox = QtWidgets.QMessageBox()
+    msgbox.setWindowTitle(title)
+    msgbox.setIcon(icon)
+    msgbox.setText(msg)
+    if detailed_text:
+        if is_traceback:
+            msgbox.setDetailedText(str(detailed_text[0]) + "\n" + str(detailed_text[1]) + "\n\n"
+                                   + "Traceback (most recent call last):\n"
+                                   + "".join(traceback.format_tb(detailed_text[2])))
+        else:
+            msgbox.setDetailedText(detailed_text)
+    msgbox.exec()
 
 
 if __name__ == "__main__":
