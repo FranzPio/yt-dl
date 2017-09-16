@@ -36,6 +36,7 @@ class Update(QtCore.QObject):
             archive.extractall(self.dst_folder)
         self.status_update.emit("3 / 5\nVerifying files...")
         self.new_files = []
+        # FIXME: apparently rolling.gif + youtube_icon.ico are still added to self.new_files...:/
         for root, _, files in os.walk(self.dst_folder):
             for file in files:
                 if file not in ("rolling.gif", "youtube_icon.ico", "youtube_splash_screen.png",
