@@ -65,13 +65,26 @@ class Update(QtCore.QObject):
                 self.cleanup()
                 self.information.emit("Info", "There's no update available at the time!",
                                       QtWidgets.QMessageBox.Information)
-        except (TypeError, FileNotFoundError):
-            # vfile1 is None (no new "version" file in zipball)
-            # OR "version" file doesn't exist in app_path
-            # -> but can update anyway...
+        except FileNotFoundError:
+            # "version" file doesn't exist in app_path
+            if hasattr(sys, "frozen"):
+                self.information.emit("Info", "Updating is not yet supported for Windows executables.",
+                                      QtWidgets.QMessageBox.Information)
+            else:
+                # TODO: we can should an update anyway to fix this
+                self.information.emit("Error", "Apparently, the local version file was deleted...\n"
+                                      "Reinstalling the application could fix the problem.")
+            self.cleanup()
+            self.finished.emit()
+            return
+
+        except TypeError:
+            # vfile1 is None (no new "version" file in zipball);
+            # this probably won't ever happen since I won't delete the version file on Github,
+            # but we should still throw some unexpected error warning here
+            self.cleanup()
+            self.finished.emit()
             pass
-        self.finished.emit()
-        return
 
     def copy_files(self):
         try:
