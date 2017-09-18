@@ -51,10 +51,10 @@ class FFmpeg(QtCore.QObject):
             self.get_audio_codec()
         except FFprobeNotFoundError as error:
             print(error, "\n", sys.exc_info())
-            self.error.emit("Error", error, QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+            self.error.emit("Error", str(error), QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         except FFprobeError as error:
             print(error, "\n", sys.exc_info())
-            self.error.emit("Error", error, QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+            self.error.emit("Error", str(error), QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         else:
             subprocess.run([self.ffmpeg,
                             "-i", self.path,
