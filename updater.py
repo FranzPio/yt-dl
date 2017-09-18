@@ -14,7 +14,6 @@ class Update(QtCore.QObject):
 
     status_update = QtCore.pyqtSignal(str)
     success = QtCore.pyqtSignal()
-    no_success = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(str, str, int, tuple, bool)
     information = QtCore.pyqtSignal(str, str, int)
     finished = QtCore.pyqtSignal()
