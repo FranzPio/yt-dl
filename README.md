@@ -14,13 +14,13 @@ easy-to-use YouTube downloader (GUI), created with pytube and PyQt5
 (extrapolate accordingly for other distros)
 ```
 sudo apt install python3-pip
-sudo pip3 install pytube PyQt5 beautifulsoup4 lxml
+sudo pip3 install -U pytube PyQt5 beautifulsoup4 lxml
 ```
 #### Windows:
 in a cmd enter the following
 (provided that python is in your PATH):
 ```
-python -m pip install pytube PyQt5 beautifulsoup4 lxml
+python -m pip install -U pytube PyQt5 beautifulsoup4 lxml
 ```
 #### macOS:
 
