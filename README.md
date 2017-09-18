@@ -1,10 +1,11 @@
 # yt-dl
-youtube-downloader (GUI) for Windows + Linux (+ macOS), created with PyQt5, pytube and beautifulsoup4
+youtube-downloader (GUI) for Windows + Linux (+ macOS), created with pytube and PyQt5
 
 ## Features
 - download videos or playlists from YouTube
 - mp4, webm, 3gp, flv supported (as of pytube version 6.4)
-- (in future: convert downloaded video files, e.g. to mp3)
+- extract audio from downloaded video files
+- (in future: convert audio to e.g. mp3)
 
 ## Installation
 - (if necessary) install Python (>= 3.5) from https://www.python.org/downloads/
@@ -23,7 +24,7 @@ python -m pip install pytube PyQt5 beautifulsoup4 lxml
 ```
 #### macOS:
 
-idk...
+honestly, idk...
 
 ## Launch
 ```
