@@ -3,6 +3,7 @@ from cx_Freeze import setup, Executable
 import os
 import shutil
 
+
 build_exe_options = {"excludes": ["tkinter"]}
 
 setup(name = "youtube-downloader",
