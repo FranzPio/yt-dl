@@ -1,5 +1,5 @@
 # yt-dl
-youtube-downloader (GUI) for Windows + Linux (+ macOS), created with pytube and PyQt5
+easy-to-use YouTube downloader (GUI), created with pytube and PyQt5
 
 ## Features
 - download videos or playlists from YouTube
