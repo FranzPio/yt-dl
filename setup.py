@@ -7,7 +7,7 @@ import shutil
 build_exe_options = {"excludes": ["tkinter"]}
 
 setup(name = "youtube-downloader",
-      version = "0.8.6",
+      version = "0.9",
       description = "Easy-to-use YouTube downloader (GUI).",
       options = {"build_exe": build_exe_options},
       executables = [Executable("main.py", base="Win32GUI" if sys.platform == "win32" else None)])
