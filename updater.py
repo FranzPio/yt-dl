@@ -65,6 +65,7 @@ class Update(QtCore.QObject):
                 self.cleanup()
                 self.information.emit("Info", "There's no update available at the time!",
                                       QtWidgets.QMessageBox.Information)
+                self.finished.emit()
         except FileNotFoundError:
             # "version" file doesn't exist in app_path
             if hasattr(sys, "frozen"):
@@ -76,7 +77,6 @@ class Update(QtCore.QObject):
                                       "Reinstalling the application could fix the problem.")
             self.cleanup()
             self.finished.emit()
-            return
 
         except TypeError:
             # vfile1 is None (no new "version" file in zipball);
@@ -84,7 +84,6 @@ class Update(QtCore.QObject):
             # but we should still throw some unexpected error warning here
             self.cleanup()
             self.finished.emit()
-            pass
 
     def copy_files(self):
         try:
