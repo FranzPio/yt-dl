@@ -108,7 +108,7 @@ class AboutDialog(QtWidgets.QDialog):
         hbox3.addWidget(self.version_lbl)
         hbox3.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.description_lbl = QtWidgets.QLabel("An easy-to-use youtube-downloader (GUI),<br>"
+        self.description_lbl = QtWidgets.QLabel("An easy-to-use YouTube downloader (GUI),<br>"
                                                 "created with PyQt5, pytube and beautifulsoup4.<br>"
                                                 "Icon: composition of illustrations from "
                                                 "<a href=\"https://icons8.com\">icons8.com</a>.<br>"
