@@ -1,5 +1,5 @@
 # yt-dl
-easy-to-use YouTube downloader (GUI), created with pytube and PyQt5
+easy-to-use YouTube downloader (GUI), created with PyQt5, pytube and beautifulsoup4
 
 ## Features
 - download videos or playlists from YouTube
