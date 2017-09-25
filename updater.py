@@ -38,7 +38,7 @@ class Update(QtCore.QObject):
         # FIXME: apparently rolling.gif + youtube_icon.ico are still added to self.new_files...:/
         for root, _, files in os.walk(self.dst_folder):
             for file in files:
-                if file not in ("rolling.gif", "youtube_icon.ico", "youtube_splash_screen.png",
+                if file not in ("rolling.gif", "youtube_icon.ico", "youtube_icon_red.png", "youtube_splash_screen.png",
                                 "resources.qrc", "README.md"):
                     self.new_files.append(os.path.join(root, file))
         new_vfile = None

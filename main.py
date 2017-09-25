@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from PyQt5 import QtCore, QtWidgets, QtGui
 import time
 import sys
@@ -5,30 +6,29 @@ import os.path
 import collections.abc
 from youtube import YouTube
 from converter import FFmpeg
-from dialogs import UpdateDialog, AboutDialog, show_msgbox
+from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
 import resources
-
-# copyright note: YouTube® is a registered trade mark of Google Inc., a subsidiary of Alphabet Inc.
-
-# TODO: about window or something of the like that
-#       - credits icons8.com (and loading.io, although CC0) for the yt icon (/ the spinning wheel)
-#       - gives license information (GPL v3)
 
 
 class DownloadWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-
-        time.sleep(0.7)  # a little time for splashie to be shown (otherwise it just blinks up for a nanosecond...)
+        self.splashie = show_splash(parent=self)
+        QtWidgets.qApp.processEvents()
+        QtCore.QTimer.singleShot(600, self.show_window)
 
         self.videos = None
         self.playlist_videos = None
         self.video_formats = None
 
         self.init_ui()
-        self.show()
+        self.move(QtWidgets.qApp.desktop().screen().rect().center() - self.rect().center())
 
-        splashie.finish(self)
+    def show_window(self):
+        self.splashie.finish(self)
+        self.setWindowIcon(QtGui.QIcon(":/resources/youtube_icon.ico"))
+        self.setWindowTitle("yt-dl")
+        self.show()
 
     def init_ui(self):
         self.toolbar = self.create_toolbar()
@@ -52,7 +52,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.widget)
 
         self.setMinimumSize(395, 400)
-        self.setWindowIcon(QtGui.QIcon(":/resources/youtube_icon.ico"))
 
     def create_toolbar(self):
         exit_action = QtWidgets.QAction("&Exit", self)
@@ -71,6 +70,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         help_menu = menu_bar.addMenu("&?")
         help_menu.addAction(update_action)
         help_menu.addAction(about_action)
+        return menu_bar
 
     def update_dialog(self):
         update_dlg = UpdateDialog(self)
@@ -204,7 +204,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
             checked_videos = []
             for index, video in enumerate(self.playlist_videos):
                 if self.url_box.videos_list_widget.item(index).checkState() == QtCore.Qt.Checked:
-                    checked_videos.append(self.playlist_videos[index])
+                    checked_videos.append(video)
             if checked_videos:
                 YouTube._download_playlist(checked_videos, extension, resolution)
             else:
@@ -352,13 +352,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.convert_box.convert_btn.show()
 
 
-if __name__ == "__main__":
+def startup():
+    global splashie
     app = QtWidgets.QApplication(sys.argv)
-
-    pixmap = QtGui.QPixmap(":/resources/youtube_splash_screen.png")
-    splashie = QtWidgets.QSplashScreen(pixmap)
-    splashie.show()
-    app.processEvents()
     # locale = QtCore.QLocale.system().name()
     # qtTranslator = QtCore.QTranslator()
     # translations_path = QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.TranslationsPath)
@@ -368,3 +364,7 @@ if __name__ == "__main__":
     #     print("[PyNEWS] Error loading Qt language file for", locale, "language!")
     window = DownloadWindow()
     app.exec_()
+
+
+if __name__ == "__main__":
+    startup()

@@ -4,7 +4,7 @@ import os.path
 import subprocess
 import traceback
 from updater import Update
-from resources import *
+import resources
 
 
 LICENSE = None
@@ -23,6 +23,25 @@ def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, detailed_text=Non
         else:
             msgbox.setDetailedText(detailed_text)
     msgbox.exec()
+
+
+def show_splash(parent=None):
+    try:
+        with open("version") as vfile:
+            version = "v" + vfile.read().strip()
+    except (FileNotFoundError, OSError):
+        version = None
+    pixmap = QtGui.QPixmap(":/resources/youtube_splash_screen.png")
+    splashie = QtWidgets.QSplashScreen(parent if parent else None, pixmap)
+    big_font = splashie.font()
+    big_font.setPointSize(10)
+    big_font.setBold(True)
+    splashie.setFont(big_font)
+    splashie.setWindowOpacity(0.95)
+    if version:
+        splashie.showMessage(version, QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom, QtCore.Qt.white)
+    splashie.show()
+    return splashie
 
 
 def show_license(parent=None):
