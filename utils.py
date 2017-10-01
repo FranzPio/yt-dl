@@ -1,11 +1,34 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
-import sys
-import os.path
 import subprocess
 import traceback
+import sys
+import os.path
 from updater import Update
 import resources
 
+
+IS_FROZEN = hasattr(sys, "frozen")
+
+if IS_FROZEN:
+    FILE = sys.executable
+    EXE = sys.executable
+else:
+    FILE = os.path.realpath(__file__)
+    EXE = os.path.join(sys.executable, FILE)
+
+APP_PATH = os.path.dirname(FILE)
+
+VERSION_FILE = os.path.join(APP_PATH, "version")
+try:
+    with open(VERSION_FILE) as vfile:
+        VERSION = vfile.read().strip()
+except (FileNotFoundError, OSError):
+    VERSION = None
+
+ZIP_URL = "https://github.com/FranzPio/yt-dl/zipball/master/"
+GITHUB_URL = "https://github.com/FranzPio/yt-dl"
+ICONS8_URL = "https://icons8.com"
+LOADINGIO_URL = "https://loading.io"
 
 LICENSE = None
 
@@ -25,21 +48,16 @@ def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, detailed_text=Non
     msgbox.exec()
 
 
-def show_splash(parent=None):
-    try:
-        with open("version") as vfile:
-            version = "v" + vfile.read().strip()
-    except (FileNotFoundError, OSError):
-        version = None
-    pixmap = QtGui.QPixmap(":/resources/youtube_splash_screen.png")
+def show_splash(parent=None, opacity=0.95, vfont_size=11, vfont_bold=True):
+    pixmap = QtGui.QPixmap(":/youtube_splash_screen.png")
     splashie = QtWidgets.QSplashScreen(parent if parent else None, pixmap)
     big_font = splashie.font()
-    big_font.setPointSize(10)
-    big_font.setBold(True)
+    big_font.setPointSize(vfont_size)
+    big_font.setBold(vfont_bold)
     splashie.setFont(big_font)
-    splashie.setWindowOpacity(0.95)
-    if version:
-        splashie.showMessage(version, QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom, QtCore.Qt.white)
+    splashie.setWindowOpacity(opacity)
+    if VERSION:
+        splashie.showMessage("v" + VERSION, QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom, QtCore.Qt.white)
     splashie.show()
     return splashie
 
@@ -58,8 +76,11 @@ def show_license(parent=None):
     txt_edit.setReadOnly(True)
     if LICENSE is None:
         try:
-            with open("LICENSE") as lfile:
-                LICENSE = lfile.read()
+            lfile = QtCore.QFile(":/LICENSE")
+            if not lfile.open(QtCore.QIODevice.ReadOnly | QtCore.QFile.Text):
+                raise FileNotFoundError
+            LICENSE = QtCore.QTextStream(lfile).readAll()
+            lfile.close()
         except (FileNotFoundError, OSError):
             LICENSE = "LICENSE file couldn't be found/accessed.\nyt-dl used to be under the GNU GPL v3.\n" \
                       "Please update the application or visit https://github.com/FranzPio/yt-dl for more information."
@@ -86,17 +107,11 @@ def show_license(parent=None):
 class AboutDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        try:
-            with open("version") as vfile:
-                self.version = "v" + vfile.read().strip()
-        except (FileNotFoundError, OSError):
-            self.version = "unknown version"
-
         self.init_ui()
 
     def init_ui(self):
-        self.resize(400, 315)
-        self.setFixedSize(400, 315)
+        self.resize(420, 360)
+        self.setFixedSize(420, 360)
         self.setWindowTitle("About")
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
@@ -104,8 +119,9 @@ class AboutDialog(QtWidgets.QDialog):
         hbox3 = QtWidgets.QHBoxLayout()
         hbox4 = QtWidgets.QHBoxLayout()
         hbox5 = QtWidgets.QHBoxLayout()
+        hbox6 = QtWidgets.QHBoxLayout()
 
-        self.icon = QtGui.QPixmap(":/resources/youtube_icon_red.png").scaled(
+        self.icon = QtGui.QPixmap(":/youtube_icon_red.png").scaled(
             92, 92, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation)
         self.icon_lbl = QtWidgets.QLabel()
         self.icon_lbl.setPixmap(self.icon)
@@ -122,23 +138,28 @@ class AboutDialog(QtWidgets.QDialog):
         hbox2.addWidget(self.title_lbl)
         hbox2.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.version_lbl = QtWidgets.QLabel(self.version)
+        self.version_lbl = QtWidgets.QLabel("v" + VERSION)
 
         hbox3.addWidget(self.version_lbl)
         hbox3.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.description_lbl = QtWidgets.QLabel("An easy-to-use YouTube downloader (GUI),<br>"
-                                                "created with PyQt5, pytube and beautifulsoup4.<br>"
-                                                "Icon: composition of illustrations from "
-                                                "<a href=\"https://icons8.com\">icons8.com</a>.<br>"
-                                                "Github page: <a href=\"https://github.com/FranzPio/yt-dl\">"
-                                                "https://github.com/FranzPio/yt-dl</a>")
-        self.description_lbl.setTextFormat(QtCore.Qt.RichText)
-        self.description_lbl.setOpenExternalLinks(True)
-        self.description_lbl.setAlignment(QtCore.Qt.AlignCenter)
+        self.copyright_lbl = QtWidgets.QLabel("\u00A9 Franz Piontek, 2017")
 
-        hbox4.addWidget(self.description_lbl)
+        hbox4.addWidget(self.copyright_lbl)
         hbox4.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.desc_lbl = QtWidgets.QLabel("An easy-to-use YouTube downloader (GUI),<br>"
+                                         "created with PyQt5, pytube and beautifulsoup4.<br>"
+                                         "Icon: composition of illustrations from "
+                                         "<a href=\"" + ICONS8_URL + "\">" + ICONS8_URL + "</a><br>"
+                                         "Loading GIF: <a href=\"" + LOADINGIO_URL + "\">" + LOADINGIO_URL + "</a><br>"
+                                         "Github page: <a href=\"" + GITHUB_URL + "\">" + GITHUB_URL + "</a>")
+        self.desc_lbl.setTextFormat(QtCore.Qt.RichText)
+        self.desc_lbl.setOpenExternalLinks(True)
+        self.desc_lbl.setAlignment(QtCore.Qt.AlignCenter)
+
+        hbox5.addWidget(self.desc_lbl)
+        hbox5.setAlignment(QtCore.Qt.AlignCenter)
 
         self.license_btn = QtWidgets.QPushButton("&License")
         self.license_btn.clicked.connect(lambda: show_license(self))
@@ -150,18 +171,19 @@ class AboutDialog(QtWidgets.QDialog):
         self.close_btn.clicked.connect(self.close)
         self.close_btn.setDefault(True)
 
-        hbox5.addWidget(self.license_btn)
-        hbox5.addWidget(self.about_qt_btn)
-        hbox5.addStretch(1)
-        hbox5.addWidget(self.close_btn)
-        hbox5.setAlignment(QtCore.Qt.AlignCenter)
+        hbox6.addWidget(self.license_btn)
+        hbox6.addWidget(self.about_qt_btn)
+        hbox6.addStretch(1)
+        hbox6.addWidget(self.close_btn)
+        hbox6.setAlignment(QtCore.Qt.AlignCenter)
 
         vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
         vbox.addLayout(hbox3)
-        vbox.addLayout(hbox4)
-        vbox.addSpacing(10)
         vbox.addLayout(hbox5)
+        vbox.addLayout(hbox4)
+        vbox.addSpacing(5)
+        vbox.addLayout(hbox6)
 
         self.setLayout(vbox)
 
@@ -177,7 +199,7 @@ class UpdateDialog(QtWidgets.QDialog):
         vbox = QtWidgets.QVBoxLayout()
 
         self.loading_indicator = QtWidgets.QLabel()
-        self.spinning_wheel = QtGui.QMovie(":/resources/rolling.gif")
+        self.spinning_wheel = QtGui.QMovie(":/rolling.gif")
         self.spinning_wheel.setScaledSize(QtCore.QSize(32, 32))
         self.loading_indicator.setMovie(self.spinning_wheel)
 
@@ -191,7 +213,7 @@ class UpdateDialog(QtWidgets.QDialog):
     def start_update(self):
         self.spinning_wheel.start()
 
-        self.updater = Update("https://github.com/FranzPio/yt-dl/zipball/master/")
+        self.updater = Update(ZIP_URL)
         self.thread = QtCore.QThread()
         self.updater.moveToThread(self.thread)
         self.updater.finished.connect(self.close)
@@ -226,8 +248,4 @@ class UpdateDialog(QtWidgets.QDialog):
     def restart():
         QtWidgets.qApp.closeAllWindows()
         QtWidgets.qApp.quit()
-        if hasattr(sys, "frozen"):
-            filepath = sys.executable
-        else:
-            filepath = [sys.executable, os.path.abspath(__file__)]
-        subprocess.run(filepath)
+        subprocess.run(EXE)

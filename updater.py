@@ -7,6 +7,7 @@ from datetime import datetime
 import zipfile
 import shutil
 from distutils.version import StrictVersion
+from utils import APP_PATH, VERSION, IS_FROZEN
 
 
 # TODO: support updating if application is frozen (.exe)
@@ -46,10 +47,9 @@ class Update(QtCore.QObject):
             if file.endswith("version"):
                 new_vfile = file
         try:
-            self.app_path = os.path.dirname(os.path.realpath("version"))
-            with open(new_vfile) as vfile1, open(os.path.join(self.app_path, "version")) as vfile2:
+            with open(new_vfile) as vfile1:
                 new_version = vfile1.read().strip()
-                old_version = vfile2.read().strip()
+                old_version = VERSION
             if StrictVersion(new_version) > StrictVersion(old_version):
                 self.status_update.emit("4 / 5\nCopying new files...")
                 self.copy_files()
@@ -65,10 +65,9 @@ class Update(QtCore.QObject):
                 self.cleanup()
                 self.information.emit("Info", "There's no update available at the time!",
                                       QtWidgets.QMessageBox.Information)
-                self.finished.emit()
         except FileNotFoundError:
-            # "version" file doesn't exist in app_path
-            if hasattr(sys, "frozen"):
+            # "version" file doesn't exist in app path
+            if IS_FROZEN:
                 self.information.emit("Info", "Updating is not yet supported for Windows executables.",
                                       QtWidgets.QMessageBox.Information)
             else:
@@ -76,22 +75,22 @@ class Update(QtCore.QObject):
                 self.information.emit("Error", "Apparently, the local version file was deleted...\n"
                                       "Reinstalling the application could fix the problem.")
             self.cleanup()
-            self.finished.emit()
 
         except TypeError:
             # vfile1 is None (no new "version" file in zipball);
             # this probably won't ever happen since I won't delete the version file on Github,
             # but we should still throw some unexpected error warning here
             self.cleanup()
+        finally:
             self.finished.emit()
 
     def copy_files(self):
         try:
             for file in self.new_files:
-                shutil.copy2(file, self.app_path)
+                shutil.copy2(file, APP_PATH)
         except OSError:
             # no write permissions or some other weird OS-thingy
-            self.error.emit("Error", "Apparently you don't have write permissions for \"" + self.app_path + "\".",
+            self.error.emit("Error", "Apparently you don't have write permissions for \"" + APP_PATH + "\".",
                             QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
 
     def cleanup(self):

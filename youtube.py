@@ -30,8 +30,6 @@ class YouTube(QtCore.QObject):
     playlist_found = QtCore.pyqtSignal(list)
     success = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(str, str, int, tuple, bool)
-    # critical_error = QtCore.pyqtSignal(str, tuple)  # later replace this by another argument passed in error.emit()
-                                                      # (e.g. QtWidgets.QMessageBox.Critical)
 
     last_downloaded = []
 

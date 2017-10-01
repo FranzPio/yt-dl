@@ -1,34 +1,29 @@
 #!/usr/bin/env python3
 from PyQt5 import QtCore, QtWidgets, QtGui
-import time
 import sys
 import os.path
 import collections.abc
 from youtube import YouTube
 from converter import FFmpeg
-from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
+from utils import UpdateDialog, AboutDialog, show_msgbox, show_splash
 import resources
 
 
 class DownloadWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.splashie = show_splash(parent=self)
-        QtWidgets.qApp.processEvents()
-        QtCore.QTimer.singleShot(600, self.show_window)
+        self.splashie = show_splash(self)
+        QtCore.QTimer.singleShot(1200, self.show_window)
 
         self.videos = None
         self.playlist_videos = None
         self.video_formats = None
 
         self.init_ui()
-        self.move(QtWidgets.qApp.desktop().screen().rect().center() - self.rect().center())
 
     def show_window(self):
-        self.splashie.finish(self)
-        self.setWindowIcon(QtGui.QIcon(":/resources/youtube_icon.ico"))
-        self.setWindowTitle("yt-dl")
         self.show()
+        self.splashie.finish(self)
 
     def init_ui(self):
         self.toolbar = self.create_toolbar()
@@ -52,6 +47,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.widget)
 
         self.setMinimumSize(395, 400)
+        self.move(QtWidgets.qApp.desktop().screen().rect().center() - self.rect().center())
+        self.setWindowIcon(QtGui.QIcon(":/youtube_icon.ico"))
+        self.setWindowTitle("yt-dl")
 
     def create_toolbar(self):
         exit_action = QtWidgets.QAction("&Exit", self)
@@ -89,12 +87,12 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox3 = QtWidgets.QHBoxLayout()
 
         url_box.url_ledit = QtWidgets.QLineEdit()
-        url_box.url_ledit.setPlaceholderText("url of a YouTube video or playlist")
+        url_box.url_ledit.setPlaceholderText("URL of a YouTube video or playlist")
         url_box.get_videos_btn = QtWidgets.QPushButton("Find videos...")
         url_box.get_videos_btn.setDefault(True)
         url_box.get_videos_btn.clicked.connect(lambda: self.get_videos_from_url(url_box.url_ledit.text()))
         url_box.loading_indicator = QtWidgets.QLabel()
-        url_box.spinning_wheel = QtGui.QMovie(":/resources/rolling.gif")
+        url_box.spinning_wheel = QtGui.QMovie(":/rolling.gif")
         url_box.spinning_wheel.setScaledSize(QtCore.QSize(26, 26))
         # url_box.loading_indicator.setMovie(url_box.spinning_wheel)
         url_box.videos_list_widget = QtWidgets.QListWidget()
@@ -162,25 +160,15 @@ class DownloadWindow(QtWidgets.QMainWindow):
                                                     "NOTE: This is a TEMPORARY solution just to make it work.")
         save_box.destination_lbl.setWordWrap(True)
         save_box.destination_lbl.hide()
-        # save_box.destination_ledit = QtWidgets.QLineEdit()
-        # save_box.destination_ledit.setReadOnly(True)
-        # save_box.destination_ledit.hide()
         save_box.download_btn = QtWidgets.QPushButton("DOWNLOAD")
         save_box.download_btn.clicked.connect(self.on_download_clicked)
         save_box.download_btn.hide()
-        # save_box.loading_indicator = QtWidgets.QLabel()
-        # save_box.spinning_wheel = QtGui.QMovie(":/resources/rolling.gif")
-        # save_box.spinning_wheel.setScaledSize(QtCore.QSize(26, 26))
 
         hbox1.addWidget(save_box.continue_msg)
         vbox.addLayout(hbox1)
-        # hbox2.addWidget(save_box.destination_ledit)
         hbox2.addWidget(save_box.destination_lbl)
         vbox.addLayout(hbox2)
         hbox3.addWidget(save_box.download_btn)
-        # hbox3.addSpacing(5)
-        # hbox3.addWidget(save_box.loading_indicator)
-        # vbox.addSpacing(5)  # apparently, the spacing is there regardless of whether the hboxes are hidden or not...:(
         vbox.addLayout(hbox3)
 
         save_box.setLayout(vbox)
@@ -190,8 +178,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def on_download_clicked(self):
         extension = YouTube.uglify(self.settings_box.format_dropdown.currentText())
         resolution = YouTube.uglify(self.settings_box.resolution_dropdown.currentText())
-        # self.save_box.loading_indicator.setMovie(self.save_box.spinning_wheel)
-        # self.save_box.spinning_wheel.start()
 
         if len(self.url_box.videos_list_widget) < 1:
             return
@@ -209,9 +195,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 YouTube._download_playlist(checked_videos, extension, resolution)
             else:
                 return
-
-        # self.save_box.spinning_wheel.stop()
-        # self.save_box.loading_indicator.stop()
 
     def create_convert_box(self):
         convert_box = QtWidgets.QGroupBox("4. (not really) Convert downloaded file")
@@ -241,7 +224,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         return convert_box
 
-    def on_convert_clicked(self):
+    @staticmethod
+    def on_convert_clicked():
         if YouTube.last_downloaded:
             path_list = []
             for video in YouTube.last_downloaded:
@@ -264,21 +248,19 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.url_box.loading_indicator.setMovie(self.url_box.spinning_wheel)
         self.url_box.spinning_wheel.start()
 
-        self.threads_workers = {}
-        yt = YouTube(page_url)
-        thread = QtCore.QThread()
-        self.threads_workers.update({"thread": thread, "worker": yt})
-        yt.moveToThread(thread)
-        yt.finished.connect(thread.quit)
-        yt.videos_found.connect(self.on_videos_found)
-        yt.playlist_found.connect(self.on_playlist_found)
-        yt.success.connect(self.on_success)
-        yt.error.connect(show_msgbox)
+        self.yt = YouTube(page_url)
+        self.thread = QtCore.QThread()
+        self.yt.moveToThread(self.thread)
+        self.yt.finished.connect(self.thread.quit)
+        self.yt.videos_found.connect(self.on_videos_found)
+        self.yt.playlist_found.connect(self.on_playlist_found)
+        self.yt.success.connect(self.on_success)
+        self.yt.error.connect(show_msgbox)
 
-        thread.started.connect(yt.find_videos)
-        thread.finished.connect(self.on_thread_finished)
+        self.thread.started.connect(self.yt.find_videos)
+        self.thread.finished.connect(self.on_thread_finished)
 
-        thread.start()
+        self.thread.start()
 
     def on_videos_found(self, videos):
         # TODO: this doesn't have to be a QListWidget anymore since we can be sure to get only one video
@@ -353,7 +335,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
 
 def startup():
-    global splashie
     app = QtWidgets.QApplication(sys.argv)
     # locale = QtCore.QLocale.system().name()
     # qtTranslator = QtCore.QTranslator()

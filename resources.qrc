@@ -1,8 +1,9 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-    <file>resources/youtube_icon.ico</file>
-    <file>resources/youtube_icon_red.png</file>
-    <file>resources/youtube_splash_screen.png</file>
-    <file>resources/rolling.gif</file>
+    <file alias="youtube_icon.ico">resources/youtube_icon.ico</file>
+    <file alias="youtube_icon_red.png">resources/youtube_icon_red.png</file>
+    <file alias="youtube_splash_screen.png">resources/youtube_splash_screen.png</file>
+    <file alias="rolling.gif">resources/rolling.gif</file>
+    <file alias="LICENSE">LICENSE</file>
 </qresource>
 </RCC>
