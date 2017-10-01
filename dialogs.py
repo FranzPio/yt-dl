@@ -178,20 +178,15 @@ class UpdateDialog(QtWidgets.QDialog):
         self.spinning_wheel.setScaledSize(QtCore.QSize(32, 32))
         self.loading_indicator.setMovie(self.spinning_wheel)
 
+        hbox1.addWidget(self.loading_indicator)
+
         self.status_lbl = QtWidgets.QLabel()
         # self.update_dlg.status_lbl.setWordWrap(True)
 
-        hbox1.addWidget(self.loading_indicator)
-        hbox1.addWidget(self.status_lbl)
+        hbox2.addWidget(self.status_lbl)
 
-        self.cancel_btn = QtWidgets.QPushButton("&Cancel")
-        self.cancel_btn.clicked.connect(self.close)
-
-        hbox2.addWidget(self.cancel_btn)
-        hbox2.setAlignment(QtCore.Qt.AlignRight)
-
-        vbox.addWidget(self.loading_indicator)
-        vbox.addWidget(self.status_lbl)
+        vbox.addLayout(hbox1)
+        vbox.addLayout(hbox2)
         self.setLayout(vbox)
 
     def start_update(self):
@@ -214,7 +209,7 @@ class UpdateDialog(QtWidgets.QDialog):
         if evt.key() == QtCore.Qt.Key_Escape:
             self.close()
         else:
-            self.keyPressEvent(evt)
+            QtWidgets.QDialog.keyPressEvent(self, evt)
 
     def closeEvent(self, evt):
         self.thread.quit()
