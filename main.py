@@ -5,7 +5,7 @@ import os.path
 import collections.abc
 from youtube import YouTube
 from converter import FFmpeg
-from utils import UpdateDialog, AboutDialog, show_msgbox, show_splash
+from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
 import resources
 
 
