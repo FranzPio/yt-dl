@@ -220,7 +220,7 @@ class UpdateDialog(QtWidgets.QDialog):
         if not self.thread.isFinished():
             self.thread.terminate()
             self.thread.wait(2000)
-        self.close()
+        QtWidgets.QDialog.closeEvent(self, evt)
 
     def success(self):
         self.close()

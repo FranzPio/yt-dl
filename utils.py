@@ -8,8 +8,8 @@ if IS_FROZEN:
     FILE = sys.executable
     EXE = sys.executable
 else:
-    FILE = os.path.realpath(__file__)
-    EXE = os.path.join(sys.executable, FILE)
+    FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "main.py")
+    EXE = [sys.executable, FILE]
 
 APP_PATH = os.path.dirname(FILE)
 
