@@ -6,6 +6,9 @@ from updater import Update
 import resources
 
 
+LICENSE = None
+
+
 def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, detailed_text=None, is_traceback=False):
     msgbox = QtWidgets.QMessageBox()
     msgbox.setWindowTitle(title)

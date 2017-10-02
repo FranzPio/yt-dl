@@ -24,5 +24,3 @@ ZIP_URL = "https://github.com/FranzPio/yt-dl/zipball/master/"
 GITHUB_URL = "https://github.com/FranzPio/yt-dl"
 ICONS8_URL = "https://icons8.com"
 LOADINGIO_URL = "https://loading.io"
-
-LICENSE = None
