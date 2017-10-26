@@ -27,8 +27,3 @@ python3 main.py
 (given that the files are in your working directory)
 #### Windows:
 execute `yt-dl_x.x.x_setup.exe` and follow the instructions
-
-### Launch
-```
-python3 main.py
-```
