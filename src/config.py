@@ -1,7 +1,7 @@
 import sys
 import os.path
 
-
+VERSION = "0.9.5"
 IS_FROZEN = hasattr(sys, "frozen")
 
 if IS_FROZEN:
@@ -12,13 +12,6 @@ else:
     EXE = [sys.executable, FILE]
 
 APP_PATH = os.path.dirname(FILE)
-
-VERSION_FILE = os.path.join(APP_PATH, "version")
-try:
-    with open(VERSION_FILE) as vfile:
-        VERSION = vfile.read().strip()
-except (FileNotFoundError, OSError):
-    VERSION = None
 
 ZIP_URL = "https://github.com/FranzPio/yt-dl/zipball/master/"
 GITHUB_URL = "https://github.com/FranzPio/yt-dl"
