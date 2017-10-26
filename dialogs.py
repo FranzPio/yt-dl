@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
 import subprocess
 import traceback
-from utils import VERSION, ICONS8_URL, LOADINGIO_URL, GITHUB_URL, ZIP_URL, EXE
+from config import VERSION, ICONS8_URL, LOADINGIO_URL, GITHUB_URL, ZIP_URL, EXE
 from updater import Update
 import resources
 

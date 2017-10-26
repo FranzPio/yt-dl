@@ -7,7 +7,7 @@ from datetime import datetime
 import zipfile
 import shutil
 from distutils.version import StrictVersion
-from utils import APP_PATH, VERSION, IS_FROZEN
+from config import APP_PATH, VERSION, IS_FROZEN
 
 
 # TODO: support updating if application is frozen (.exe)
