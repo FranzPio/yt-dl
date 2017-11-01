@@ -21,15 +21,15 @@ class YouTube(QtCore.QObject):
 
     formats = collections.OrderedDict([("mp4", "MPEG-4 AVC / H.264 (.mp4)"),
                                        ("webm", "VP9 (.webm)"),
-                                       ("3gp", "MPEG-4 Visual (.3gp)"),
+                                       ("3gpp", "MPEG-4 Visual (.3gpp)"),
                                        ("flv", "Sorenson H.263 (.flv)")])
 
     standard_formats = collections.OrderedDict([("mp4", ["360p", "720p"]),
                                                 ("webm", ["360p"]),
-                                                ("3gp", ["144p", "240p"])])
+                                                ("3gpp", ["144p", "240p"])])
 
     finished = QtCore.pyqtSignal()
-    videos_found = QtCore.pyqtSignal(list)
+    video_found = QtCore.pyqtSignal(list)
     playlist_found = QtCore.pyqtSignal(list)
     success = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(str, str, int, tuple, bool)
@@ -43,42 +43,36 @@ class YouTube(QtCore.QObject):
     def find_videos(self):
         try:
             yt = pytube.YouTube(self.page_url)
-            videos = yt.get_videos()
+            videos = yt.streams.filter(progressive=True).desc().all()
             if not videos:
                 self.error.emit("Error", "No URL given. Enter a URL to continue.",
                                 QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
             else:
                 self.success.emit()
-                self.videos_found.emit(videos)
-        except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
+                self.video_found.emit(videos)
+        except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.RegexMatchError):
             try:
                 yt = pytube.YouTube("https://" + self.page_url)
-                videos = yt.get_videos()
+                videos = yt.streams.filter(progressive=True).desc().all()
                 if not videos:
                     self.error.emit("Error", "No URL given. Enter a URL to continue.",
                                     QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
                 else:
                     self.success.emit()
-                    self.videos_found.emit(videos)
+                    self.video_found.emit(videos)
             except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
                 self.error.emit("Error", "Invalid url: no videos could be found. Check url for typos.",
                                 QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
-            except pytube.exceptions.AgeRestricted:
+            except pytube.exceptions.AgeRestrictionError:
                 # the video could be age restricted OR we're maybe dealing with a playlist
                 self.find_playlist("https://" + self.page_url)
-            except Exception:
-                self.error.emit("Error", "An unexpected error occurred. See below for details.",
-                                QtWidgets.QMessageBox.Critical, sys.exc_info(), True)
 
-        except (pytube.exceptions.CipherError, pytube.exceptions.ExtractorError):
+        except pytube.exceptions.PytubeError:
             self.error.emit("Error", "An error occurred. Couldn't get video(s). Try another url.",
                             QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
-        except pytube.exceptions.AgeRestricted:
+        except pytube.exceptions.AgeRestrictionError:
             # the video could be age restricted OR we're maybe dealing with a playlist
             self.find_playlist(self.page_url)
-        except Exception:
-            self.error.emit("Error", "An unexpected error occurred. See below for details.",
-                            QtWidgets.QMessageBox.Critical, sys.exc_info(), True)
         finally:
             self.finished.emit()
 
@@ -162,10 +156,10 @@ class YouTube(QtCore.QObject):
                 yt = pytube.YouTube(video[1])
                 video = yt.get(extension, resolution)
                 video.download(destination)
-            except pytube.exceptions.DoesNotExist:
-                print("An error occurred:\nThe video isn't available in the given format / resolution."
-                      "This happens due to a bug that will be fixed soon.\n", sys.exc_info())
-                errors += 1
+            # except pytube.exceptions.DoesNotExist:
+            #     print("An error occurred:\nThe video isn't available in the given format / resolution."
+            #           "This happens due to a bug that will be fixed soon.\n", sys.exc_info())
+            #     errors += 1
             except Exception:
                 print("An error occurred:\n", sys.exc_info())
                 errors += 1

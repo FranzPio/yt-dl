@@ -6,21 +6,20 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from config import VERSION, ICONS8_URL, LOADINGIO_URL, GITHUB_URL, ZIP_URL, EXE
 from updater import Update
 
+
 LICENSE = None
 
 
-def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, detailed_text=None, is_traceback=False):
+def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, details=None, is_traceback=False):
     msgbox = QtWidgets.QMessageBox()
     msgbox.setWindowTitle(title)
     msgbox.setIcon(icon)
     msgbox.setText(msg)
-    if detailed_text:
+    if details:
         if is_traceback:
-            msgbox.setDetailedText(str(detailed_text[0]) + "\n" + str(detailed_text[1]) + "\n\n"
-                                   + "Traceback (most recent call last):\n"
-                                   + "".join(traceback.format_tb(detailed_text[2])))
+            msgbox.setDetailedText("".join(traceback.format_exception(*details)))
         else:
-            msgbox.setDetailedText(detailed_text)
+            msgbox.setDetailedText(details)
     msgbox.exec()
 
 
