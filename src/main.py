@@ -2,12 +2,31 @@
 import collections.abc
 import os.path
 import sys
+import traceback
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 
+from config import APP_PATH
 from converter import FFmpeg
 from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
+from utils import LineEdit
 from youtube import YouTube
+import resources
+
+
+def handle_uncaught_exception(exc_type, exc_obj, exc_tb):
+    if not issubclass(exc_type, Warning):
+        QtCore.QMetaObject.invokeMethod(window, "show_msgbox",
+                                        QtCore.Q_ARG(str, "Error"),
+                                        QtCore.Q_ARG(str, "An unexpected error occurred. See below for details."),
+                                        QtCore.Q_ARG(int, QtWidgets.QMessageBox.Critical),
+                                        QtCore.Q_ARG(list, [exc_type, exc_obj, exc_tb]))
+    with open(os.path.join(APP_PATH, "yt-dl.log"), "a") as lfile:
+        lfile.write(str(exc_type) + "\n" + str(exc_obj) + "\n\n" + "".join(traceback.format_tb(exc_tb)) +
+                    "\n\n////\n\n")
+
+
+sys.excepthook = handle_uncaught_exception
 
 
 class DownloadWindow(QtWidgets.QMainWindow):
@@ -21,6 +40,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.video_formats = None
 
         self.init_ui()
+
+    @QtCore.pyqtSlot(str, str, int, list)
+    def show_msgbox(self, title, msg, icon, tb):
+        show_msgbox(title, msg, icon, tb, True)
 
     def show_window(self):
         self.show()
@@ -87,8 +110,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox2 = QtWidgets.QHBoxLayout()
         hbox3 = QtWidgets.QHBoxLayout()
 
-        url_box.url_ledit = QtWidgets.QLineEdit()
+        url_box.url_ledit = LineEdit()
         url_box.url_ledit.setPlaceholderText("URL of a YouTube video or playlist")
+        url_box.url_ledit.returnPressed.connect(lambda: self.get_videos_from_url(url_box.url_ledit.text()))
         url_box.get_videos_btn = QtWidgets.QPushButton("Find videos...")
         url_box.get_videos_btn.setDefault(True)
         url_box.get_videos_btn.clicked.connect(lambda: self.get_videos_from_url(url_box.url_ledit.text()))
@@ -240,7 +264,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
             print("Finished (more or less) successfully.")
 
     def get_videos_from_url(self, page_url=None):
-        # sys.excepthook = lambda *args: print(args)
         self.url_box.get_videos_btn.setDisabled(True)
         self.url_box.url_ledit.setDisabled(True)
         self.url_box.videos_list_widget.setDisabled(True)
@@ -253,7 +276,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.thread = QtCore.QThread()
         self.yt.moveToThread(self.thread)
         self.yt.finished.connect(self.thread.quit)
-        self.yt.videos_found.connect(self.on_videos_found)
+        self.yt.video_found.connect(self.on_video_found)
         self.yt.playlist_found.connect(self.on_playlist_found)
         self.yt.success.connect(self.on_success)
         self.yt.error.connect(show_msgbox)
@@ -263,10 +286,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         self.thread.start()
 
-    def on_videos_found(self, videos):
+    def on_video_found(self, video):
         # TODO: this doesn't have to be a QListWidget anymore since we can be sure to get only one video
         video_item = QtWidgets.QListWidgetItem()
-        video_item.setText("1 - " + videos[0].filename)
+        video_item.setText("1 - " + video[0].default_filename)
         video_item.setFlags(video_item.flags() | QtCore.Qt.ItemIsUserCheckable)
         video_item.setCheckState(QtCore.Qt.Checked)
         self.url_box.videos_list_widget.addItem(video_item)
@@ -275,8 +298,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.video_formats = collections.OrderedDict()
         for format in YouTube.formats.keys():
             self.video_formats.update({format: []})
-        for video in videos:
-            self.video_formats[video.extension].append(video.resolution)
+        for streams in video:
+            self.video_formats[streams.subtype].append(streams.resolution)
         for format, resolution in self.video_formats.items():
             if not resolution:
                 self.video_formats.pop(format)
@@ -286,7 +309,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         for i in list(self.video_formats.values())[0]:
             self.settings_box.resolution_dropdown.addItem(YouTube.prettify(i))
 
-        self.videos = videos
+        self.videos = video
 
     def on_playlist_found(self, videos):
         for index, video_info in enumerate(videos):
@@ -336,6 +359,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
 
 def startup():
+    global window
+    logfile = os.path.join(APP_PATH, "yt-dl.log")
+    if os.path.isfile(logfile):
+        os.remove(logfile)
     app = QtWidgets.QApplication(sys.argv)
     # locale = QtCore.QLocale.system().name()
     # qtTranslator = QtCore.QTranslator()
@@ -345,7 +372,7 @@ def startup():
     # else:
     #     print("[PyNEWS] Error loading Qt language file for", locale, "language!")
     window = DownloadWindow()
-    app.exec_()
+    app.exec()
 
 
 if __name__ == "__main__":
