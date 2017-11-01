@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-from PyQt5 import QtCore, QtWidgets, QtGui
-import sys
-import os.path
 import collections.abc
-from youtube import YouTube
+import os.path
+import sys
+
+from PyQt5 import QtCore, QtWidgets, QtGui
+
 from converter import FFmpeg
 from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
-import resources
+from youtube import YouTube
 
 
 class DownloadWindow(QtWidgets.QMainWindow):

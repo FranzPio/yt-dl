@@ -1,13 +1,15 @@
-from PyQt5 import QtCore, QtWidgets
 import os
-import sys
-import urllib.request
-import time
-from datetime import datetime
-import zipfile
 import shutil
+import sys
+import time
+import urllib.request
+import zipfile
+from datetime import datetime
 from distutils.version import StrictVersion
-from config import APP_PATH, VERSION, IS_FROZEN
+
+from PyQt5 import QtCore, QtWidgets
+
+from config import VERSION, IS_FROZEN, APP_PATH
 
 
 # TODO: support updating if application is frozen (.exe)
@@ -23,74 +25,82 @@ class Update(QtCore.QObject):
         super().__init__()
         self.url = url
 
-    # TODO: split up this admittedly horrible-looking method (make it great again! ...sorry.)
     def check_for_updates(self):
         current_datetime = datetime.now().strftime("%Y%m%d_%H%M")
-        self.filename = "ytdlupdate_" + current_datetime + ".zip"
+        self.filename = "yt-dl_update_" + current_datetime + ".zip"
+
         self.status_update.emit("1 / 5\nFetching the latest version from Github...")
-        # TODO: make this a progress bar (-> reporthook argument; pretty easy)
         urllib.request.urlretrieve(self.url, self.filename)
+
         self.status_update.emit("2 / 5\nExtracting ZIP archive...")
-        with zipfile.ZipFile(self.filename) as archive:
-            self.dst_folder = self.filename.split(".")[0]
-            archive.extractall(self.dst_folder)
+        self.dst_folder = self.filename.split(".")[0]
+        self.extract_zipball(self.filename, self.dst_folder)
+
         self.status_update.emit("3 / 5\nVerifying files...")
-        self.new_files = []
-        # FIXME: apparently rolling.gif + youtube_icon.ico are still added to self.new_files...:/
-        for root, _, files in os.walk(self.dst_folder):
-            for file in files:
-                if file not in ("rolling.gif", "youtube_icon.ico", "youtube_icon_red.png", "youtube_splash_screen.png",
-                                "resources.qrc", "README.md"):
-                    self.new_files.append(os.path.join(root, file))
-        new_vfile = None
-        for file in self.new_files:
-            if file.endswith("version"):
-                new_vfile = file
-        try:
-            with open(new_vfile) as vfile1:
-                new_version = vfile1.read().strip()
-                old_version = VERSION
-            if StrictVersion(new_version) > StrictVersion(old_version):
+        self.new_files = self.query_files(self.dst_folder)
+
+        if self.check_update_need():
+            if not IS_FROZEN:
                 self.status_update.emit("4 / 5\nCopying new files...")
-                self.copy_files()
+                self.copy_files(self.new_files, APP_PATH)
+
                 self.status_update.emit("5 / 5\nCleaning up...")
                 self.cleanup()
-                self.information.emit("Info", "Updated successfully! (" + old_version + " -> " + new_version + ")\n"
-                                      "The application will restart now for the update to take effect.",
+
+                self.information.emit("Info", "Updated successfully! (" + self.old_version + " -> " + self.new_version
+                                      + ")\nThe application will restart now for the update to take effect.",
                                       QtWidgets.QMessageBox.Information)
                 time.sleep(5)
                 self.success.emit()
             else:
                 self.status_update.emit("5 / 5\nCleaning up...")
                 self.cleanup()
-                self.information.emit("Info", "There's no update available at the time!",
-                                      QtWidgets.QMessageBox.Information)
-        except FileNotFoundError:
-            # "version" file doesn't exist in app path
-            if IS_FROZEN:
+
                 self.information.emit("Info", "Updating is not yet supported for Windows executables.",
                                       QtWidgets.QMessageBox.Information)
-            else:
-                # TODO: we can should an update anyway to fix this
-                self.information.emit("Error", "Apparently, the local version file was deleted...\n"
-                                      "Reinstalling the application could fix the problem.")
+        else:
+            self.status_update.emit("5 / 5\nCleaning up...")
             self.cleanup()
 
-        except TypeError:
-            # vfile1 is None (no new "version" file in zipball);
-            # this probably won't ever happen since I won't delete the version file on Github,
-            # but we should still throw some unexpected error warning here
-            self.cleanup()
-        finally:
-            self.finished.emit()
+            self.information.emit("Info", "There's no update available at the time!",
+                                  QtWidgets.QMessageBox.Information)
 
-    def copy_files(self):
+        self.finished.emit()
+
+    @staticmethod
+    def extract_zipball(fname, dst):
+        with zipfile.ZipFile(fname) as archive:
+            archive.extractall(dst)
+
+    @staticmethod
+    def query_files(tree):
+        queried_files = []
+        for root, _, files in os.walk(tree):
+            for file in files:
+                queried_files.append(os.path.join(root, file))
+        return queried_files
+
+    def check_update_need(self):
+        for file in self.new_files:
+            if file.endswith("config.py"):
+                sys.path.insert(0, file)
+
+        self.old_version = VERSION
+        from config import VERSION as new_version
+        self.new_version = new_version
+
+        if StrictVersion(self.new_version) <= StrictVersion(self.old_version):
+            return False
+        else:
+            return True
+
+    def copy_files(self, files, dst):
         try:
-            for file in self.new_files:
-                shutil.copy2(file, APP_PATH)
+            for file in files:
+                shutil.copy2(file, dst)
         except OSError:
             # no write permissions or some other weird OS-thingy
-            self.error.emit("Error", "Apparently you don't have write permissions for \"" + APP_PATH + "\".",
+            self.error.emit("Error", "Apparently you don't have write permissions for \"" + dst + "\".",
                             QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
 
     def cleanup(self):
