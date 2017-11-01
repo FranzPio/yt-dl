@@ -7,9 +7,10 @@ easy-to-use YouTube downloader (GUI), created with PyQt5, pytube and beautifulso
 - extract audio from downloaded video files
 
 ### To do
-- support pytube v7 or switch to youtube-dl
+- entirely support pytube v7 (e.g. resolutions >= 1080p)
 - convert audio to e.g. mp3
-- bundle ffmpeg or automatically download + install it
+- bundle ffmpeg or automatically download + install it (needed to combine yt's separate audio / video streams)
+- set ID3 tags to files (e.g. title, creator, thumbnail)
 
 [...]
 
@@ -18,7 +19,7 @@ easy-to-use YouTube downloader (GUI), created with PyQt5, pytube and beautifulso
 (extrapolate accordingly for other distros)
 ```
 sudo apt install python3-pip python3-bs4
-sudo pip3 install -U pytube==6.4.2 PyQt5 beautifulsoup4 lxml
+sudo pip3 install -U pytube PyQt5 beautifulsoup4
 ```
 to launch, type
 ```
