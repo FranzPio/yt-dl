@@ -1,4 +1,5 @@
 import collections.abc
+import html.parser
 import sys
 import urllib.error
 import urllib.request
@@ -42,49 +43,47 @@ class YouTube(QtCore.QObject):
 
     def find_videos(self):
         try:
-            yt = pytube.YouTube(self.page_url)
-            videos = yt.streams.filter(progressive=True).desc().all()
-            if not videos:
+            if not self.page_url:
                 self.error.emit("Error", "No URL given. Enter a URL to continue.",
-                                QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+                                QtWidgets.QMessageBox.Warning, (), True)
             else:
-                self.success.emit()
-                self.video_found.emit(videos)
-        except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.RegexMatchError):
+                yt = pytube.YouTube(self.page_url)
+                video = yt.streams.filter(progressive=True).desc().all()
+                if video:
+                    self.success.emit()
+                    self.video_found.emit(video)
+        except (ValueError, AttributeError, urllib.error.URLError):
             try:
                 yt = pytube.YouTube("https://" + self.page_url)
-                videos = yt.streams.filter(progressive=True).desc().all()
-                if not videos:
-                    self.error.emit("Error", "No URL given. Enter a URL to continue.",
-                                    QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
-                else:
+                video = yt.streams.filter(progressive=True).desc().all()
+                if video:
                     self.success.emit()
-                    self.video_found.emit(videos)
+                    self.video_found.emit(video)
+            except pytube.exceptions.RegexMatchError:
+                # this could be an invalid url OR we're maybe dealing with a playlist
+                self.find_playlist("https://" + self.page_url)
             except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
                 self.error.emit("Error", "Invalid url: no videos could be found. Check url for typos.",
                                 QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
-            except pytube.exceptions.AgeRestrictionError:
-                # the video could be age restricted OR we're maybe dealing with a playlist
-                self.find_playlist("https://" + self.page_url)
 
+        except pytube.exceptions.RegexMatchError:
+            # this could be an invalid url OR we're maybe dealing with a playlist
+            self.find_playlist(self.page_url)
         except pytube.exceptions.PytubeError:
             self.error.emit("Error", "An error occurred. Couldn't get video(s). Try another url.",
                             QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
-        except pytube.exceptions.AgeRestrictionError:
-            # the video could be age restricted OR we're maybe dealing with a playlist
-            self.find_playlist(self.page_url)
         finally:
             self.finished.emit()
 
     def find_playlist(self, url):
         page_html = urllib.request.urlopen(url).read()
-        page_soup = bs4.BeautifulSoup(page_html, "lxml")
+        page_soup = bs4.BeautifulSoup(page_html, "html.parser")
 
         playlist_html = page_soup.find_all(
             "a", attrs={"class": "pl-video-title-link yt-uix-tile-link yt-uix-sessionlink spf-link "})
 
         if not playlist_html:
-            self.error.emit("Error", "This video is age-restricted. This is not supported by pytube as of version 6.4.",
+            self.error.emit("Error", "This is not a playlist (or shitty youtube have changed their html again).",
                             QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         else:
             videos = []
@@ -122,16 +121,16 @@ class YouTube(QtCore.QObject):
                                   "available yet. Be patient!")
 
     @staticmethod
-    def _download_video(video_list, extension, resolution, destination=""):
+    def _download_video(video, extension, resolution, destination=""):
         # TODO: "really" do it (put downloading into thread, emit signals, update progress bar etc.)
         YouTube.last_downloaded.clear()
         successful_downloads = 0
         errors = 0
         print("Downloading ", "1", "of", "1", "...", flush=True)
         try:
-            for video in video_list:
-                if video.extension == extension and video.resolution == resolution:
-                    video.download(destination)
+            for stream in video:
+                if stream.subtype == extension and stream.resolution == resolution:
+                    stream.download(destination)
                     break
         except Exception:
             print("An error occurred:\n", sys.exc_info())
@@ -154,12 +153,11 @@ class YouTube(QtCore.QObject):
             print("Downloading", index + 1, "of", len(video_list), "...", flush=True)
             try:
                 yt = pytube.YouTube(video[1])
-                video = yt.get(extension, resolution)
-                video.download(destination)
-            # except pytube.exceptions.DoesNotExist:
-            #     print("An error occurred:\nThe video isn't available in the given format / resolution."
-            #           "This happens due to a bug that will be fixed soon.\n", sys.exc_info())
-            #     errors += 1
+                video = yt.streams.filter(progressive=True).desc().all()
+                for stream in video:
+                    if stream.subtype == extension and stream.resolution == resolution:
+                        stream.download(destination)
+
             except Exception:
                 print("An error occurred:\n", sys.exc_info())
                 errors += 1
