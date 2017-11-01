@@ -1,9 +1,12 @@
-from PyQt5 import QtCore, QtWidgets
-import pytube, pytube.exceptions
-import urllib.request, urllib.error
-import bs4
-import sys
 import collections.abc
+import sys
+import urllib.error
+import urllib.request
+
+import bs4
+import pytube
+import pytube.exceptions
+from PyQt5 import QtCore, QtWidgets
 
 
 class YouTube(QtCore.QObject):
