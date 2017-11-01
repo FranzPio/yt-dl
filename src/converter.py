@@ -1,9 +1,10 @@
-from PyQt5 import QtCore, QtWidgets
-import subprocess
-import shutil
-import os
-import sys
 import collections.abc
+import os
+import shutil
+import subprocess
+import sys
+
+from PyQt5 import QtCore, QtWidgets
 
 
 class FFmpegError(Exception):
