@@ -15,23 +15,26 @@ easy-to-use YouTube downloader (GUI), created with PyQt5, pytube and beautifulso
 [...]
 
 ### Installation
+#### Windows:
+execute `yt-dl_x.x.x_setup.exe` and follow the instructions
+
 #### Source:
-(extrapolate accordingly for other distros)
+(extrapolate accordingly for non-Debian distros)
 ##### Install dependencies
 ```
 sudo apt install python3-pip python3-setuptools python3-bs4
 sudo pip3 install -U pytube PyQt5 beautifulsoup4
 ```
 ##### (optional) Fix appearance
-On some systems using the distro's PyQt package results in an improved apperance, e.g. on Debian this can be done as follows:
+on some systems using the distro's PyQt package results in an improved appearance, e.g. on Debian this can be done as follows:
 ```
 sudo apt install python3-pyqt5
 ```
+##### Clone repo
+```
+git clone https://github.com/FranzPio/yt-dl && cd yt-dl/src
+```
 ##### Launch application
-to launch, type
 ```
 python3 main.py
 ```
-(given that the files are in your working directory)
-#### Windows:
-execute `yt-dl_x.x.x_setup.exe` and follow the instructions
