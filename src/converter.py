@@ -30,9 +30,6 @@ class FFmpeg(QtCore.QObject):
                                       ("opus", ".opus"),
                                       ("mp3", ".mp3")])
 
-    ffmpeg = shutil.which("ffmpeg") or None
-    ffprobe = shutil.which("ffprobe") or None
-
     finished = QtCore.pyqtSignal()
     success = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(str, str, int, tuple, bool)
@@ -40,6 +37,9 @@ class FFmpeg(QtCore.QObject):
     def __init__(self, path):
         super().__init__()
         self.path = os.path.normpath(path)
+
+        self.ffmpeg = shutil.which("ffmpeg") or None
+        self.ffprobe = shutil.which("ffprobe") or None
 
         self.audio_codec = None
         self.file_ext = None
@@ -55,7 +55,7 @@ class FFmpeg(QtCore.QObject):
             self.error.emit("Error", str(error), QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         except FFprobeError as error:
             print(error, "\n", sys.exc_info())
-            self.error.emit("Error", str(error), QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+            self.error.emit("Error", str(error), QtWidgets.QMessageBox.Critical, sys.exc_info(), True)
         else:
             subprocess.run([self.ffmpeg,
                             "-i", self.path,

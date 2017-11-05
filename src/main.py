@@ -15,15 +15,21 @@ import resources
 
 
 def handle_uncaught_exception(exc_type, exc_obj, exc_tb):
-    if not issubclass(exc_type, Warning):
+    with open(os.path.join(APP_PATH, "yt-dl.log"), "a") as lfile:
+        lfile.write(str(exc_type) + "\n" + str(exc_obj) + "\n\n" + "".join(traceback.format_tb(exc_tb)) +
+                    "\n\n////\n\n")
+
+    if issubclass(exc_type, Warning):
+        return
+    elif issubclass(exc_type, Exception):
         QtCore.QMetaObject.invokeMethod(window, "show_msgbox",
                                         QtCore.Q_ARG(str, "Error"),
                                         QtCore.Q_ARG(str, "An unexpected error occurred. See below for details."),
                                         QtCore.Q_ARG(int, QtWidgets.QMessageBox.Critical),
                                         QtCore.Q_ARG(list, [exc_type, exc_obj, exc_tb]))
-    with open(os.path.join(APP_PATH, "yt-dl.log"), "a") as lfile:
-        lfile.write(str(exc_type) + "\n" + str(exc_obj) + "\n\n" + "".join(traceback.format_tb(exc_tb)) +
-                    "\n\n////\n\n")
+    else:
+        traceback.print_exception(exc_type, exc_obj, exc_tb)
+        sys.exit(1)
 
 
 sys.excepthook = handle_uncaught_exception
@@ -253,8 +259,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def on_convert_clicked():
         if YouTube.last_downloaded:
             path_list = []
-            for video in YouTube.last_downloaded:
-                path_list.append(os.path.abspath(video.filename + "." + video.extension))
+            for stream in YouTube.last_downloaded:
+                path_list.append(os.path.abspath(stream.default_filename))
             # TODO: put this in threads (GUI freezes) or use ffmpeg's async interface (but idk how that works...)
             #       (+ error slots, progress indicator,...)
             for index, path in enumerate(path_list):
@@ -289,7 +295,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def on_video_found(self, video):
         # TODO: this doesn't have to be a QListWidget anymore since we can be sure to get only one video
         video_item = QtWidgets.QListWidgetItem()
-        video_item.setText("1 - " + video[0].default_filename)
+        video_item.setText("1 - " + video[0].default_filename.split(".")[0])
         video_item.setFlags(video_item.flags() | QtCore.Qt.ItemIsUserCheckable)
         video_item.setCheckState(QtCore.Qt.Checked)
         self.url_box.videos_list_widget.addItem(video_item)
