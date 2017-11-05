@@ -81,7 +81,7 @@ def show_license(parent=None):
 
 class AboutDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(parent)
         self.init_ui()
 
     def init_ui(self):
@@ -165,12 +165,11 @@ class AboutDialog(QtWidgets.QDialog):
 
 class UpdateDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(parent, QtCore.Qt.FramelessWindowHint)
         self.init_ui()
         self.start_update()
 
     def init_ui(self):
-        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
         hbox2 = QtWidgets.QHBoxLayout()

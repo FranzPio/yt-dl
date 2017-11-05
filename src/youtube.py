@@ -48,13 +48,16 @@ class YouTube(QtCore.QObject):
                                 QtWidgets.QMessageBox.Warning, (), True)
             else:
                 yt = pytube.YouTube(self.page_url)
+                yt.register_on_progress_callback(self.on_progress)
                 video = yt.streams.filter(progressive=True).desc().all()
                 if video:
                     self.success.emit()
+                    # TODO: instead of passing the StreamQuery, pass "self" -> download_video can be an instance method
                     self.video_found.emit(video)
         except (ValueError, AttributeError, urllib.error.URLError):
             try:
                 yt = pytube.YouTube("https://" + self.page_url)
+                yt.register_on_progress_callback(self.on_progress)
                 video = yt.streams.filter(progressive=True).desc().all()
                 if video:
                     self.success.emit()
@@ -123,6 +126,7 @@ class YouTube(QtCore.QObject):
     @staticmethod
     def _download_video(video, extension, resolution, destination=""):
         # TODO: "really" do it (put downloading into thread, emit signals, update progress bar etc.)
+        global stream_filesize
         YouTube.last_downloaded.clear()
         successful_downloads = 0
         errors = 0
@@ -130,6 +134,7 @@ class YouTube(QtCore.QObject):
         try:
             for stream in video:
                 if stream.subtype == extension and stream.resolution == resolution:
+                    stream_filesize = stream.filesize
                     stream.download(destination)
                     break
         except Exception:
@@ -137,7 +142,7 @@ class YouTube(QtCore.QObject):
             errors += 1
         else:
             successful_downloads += 1
-            YouTube.last_downloaded.append(video)
+            YouTube.last_downloaded.append(stream)
 
         print(successful_downloads, "of", "1", "videos were downloaded successfully.")
         if errors:
@@ -146,6 +151,8 @@ class YouTube(QtCore.QObject):
 
     @staticmethod
     def _download_playlist(video_list, extension, resolution, destination=""):
+        # TODO: multi-threaded downloading -> playlists download faster
+        global stream_filesize
         YouTube.last_downloaded.clear()
         successful_downloads = 0
         errors = 0
@@ -153,9 +160,11 @@ class YouTube(QtCore.QObject):
             print("Downloading", index + 1, "of", len(video_list), "...", flush=True)
             try:
                 yt = pytube.YouTube(video[1])
+                # yt.register_on_progress_callback(self.on_progress)
                 video = yt.streams.filter(progressive=True).desc().all()
                 for stream in video:
                     if stream.subtype == extension and stream.resolution == resolution:
+                        stream_filesize = stream.filesize
                         stream.download(destination)
 
             except Exception:
@@ -163,9 +172,18 @@ class YouTube(QtCore.QObject):
                 errors += 1
             else:
                 successful_downloads += 1
-                YouTube.last_downloaded.append(video)
+                YouTube.last_downloaded.append(stream)
 
         print(successful_downloads, "of", len(video_list), "videos were downloaded successfully.")
         if errors:
             print(errors, "errors occurred.")
         return
+
+    def on_progress(self, stream, chunk, file_handle, bytes_remaining):
+        # accessing stream.filesize was a bottleneck -> fixed by declaring global var in download_video
+        #
+        # printing this data luckily doesn't affect performance negatively, now let's see how fast Qt is...
+
+        # print(stream_filesize - bytes_remaining, "of", stream_filesize, "bytes downloaded,",
+        #       bytes_remaining, "bytes remaining")
+        pass
