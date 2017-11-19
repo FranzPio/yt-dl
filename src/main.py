@@ -41,6 +41,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.splashie = show_splash(self)
         QtCore.QTimer.singleShot(1200, self.show_window)
 
+        self.threads_workers = {}
+
         self.videos = None
         self.playlist_videos = None
         self.video_formats = None
@@ -214,7 +216,22 @@ class DownloadWindow(QtWidgets.QMainWindow):
             return
         elif len(self.url_box.videos_list_widget) == 1:
             if self.url_box.videos_list_widget.item(0).checkState() == QtCore.Qt.Checked:
-                YouTube._download_video(self.videos, extension, resolution)
+                # youtube = YouTube()
+                # self.yt.register_on_progress_callback(youtube.on_progress)
+                # thread = QtCore.QThread()
+                # youtube.moveToThread(thread)
+                # youtube.finished.connect(thread.quit)
+                # youtube.progress.connect(self.func)
+                # youtube.error.connect(show_msgbox)
+                #
+                # thread.started.connect(lambda: youtube.download_video(self.videos, extension, resolution))
+                # thread.finished.connect(lambda: print("finished!"))
+                #
+                # self.threads_workers.update({thread: youtube})
+                #
+                # thread.start()
+                youtube = YouTube()
+                youtube.download_video(self.videos, extension, resolution)
             else:
                 return
         else:
@@ -278,21 +295,24 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.url_box.loading_indicator.setMovie(self.url_box.spinning_wheel)
         self.url_box.spinning_wheel.start()
 
-        self.yt = YouTube(page_url)
-        self.thread = QtCore.QThread()
-        self.yt.moveToThread(self.thread)
-        self.yt.finished.connect(self.thread.quit)
-        self.yt.video_found.connect(self.on_video_found)
-        self.yt.playlist_found.connect(self.on_playlist_found)
-        self.yt.success.connect(self.on_success)
-        self.yt.error.connect(show_msgbox)
+        youtube = YouTube(page_url)
+        thread = QtCore.QThread()
+        youtube.moveToThread(thread)
+        youtube.finished.connect(thread.quit)
+        youtube.video_found.connect(self.on_video_found)
+        youtube.playlist_found.connect(self.on_playlist_found)
+        youtube.success.connect(self.on_success)
+        youtube.error.connect(show_msgbox)
 
-        self.thread.started.connect(self.yt.find_videos)
-        self.thread.finished.connect(self.on_thread_finished)
+        thread.started.connect(youtube.find_videos)
+        thread.finished.connect(self.on_thread_finished)
 
-        self.thread.start()
+        self.threads_workers.update({thread: youtube})
 
-    def on_video_found(self, video):
+        thread.start()
+
+    def on_video_found(self, yt):
+        video = yt.streams.filter(progressive=True).desc().all()
         # TODO: this doesn't have to be a QListWidget anymore since we can be sure to get only one video
         video_item = QtWidgets.QListWidgetItem()
         video_item.setText("1 - " + video[0].default_filename.split(".")[0])
@@ -316,6 +336,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.settings_box.resolution_dropdown.addItem(YouTube.prettify(i))
 
         self.videos = video
+        self.yt = yt
 
     def on_playlist_found(self, videos):
         for index, video_info in enumerate(videos):
@@ -347,6 +368,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.settings_box.format_dropdown.setEnabled(True)
         self.settings_box.resolution_dropdown.setEnabled(True)
         self.resize(self.widget.sizeHint())
+        # self.threads_workers.clear()
 
     def on_success(self):
         self.url_box.videos_list_widget.clear()
