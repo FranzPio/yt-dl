@@ -355,10 +355,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         self.playlist_videos = videos
 
-        # TODO: as QListWidget + settings box have been updated, "yt.get_videos()" could silently be called in a thread
-        #       and in the background create a list of "pytube.models.Video" objects
-        #       whose file size (+ extension / resolution) the QListWidget could be updated with when thread finishes
-
     def on_thread_finished(self):
         self.url_box.spinning_wheel.stop()
         self.url_box.loading_indicator.clear()
@@ -392,13 +388,6 @@ def startup():
     if os.path.isfile(logfile):
         os.remove(logfile)
     app = QtWidgets.QApplication(sys.argv)
-    # locale = QtCore.QLocale.system().name()
-    # qtTranslator = QtCore.QTranslator()
-    # translations_path = QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.TranslationsPath)
-    # if qtTranslator.load("qtbase_" + locale, translations_path):
-    #     app.installTranslator(qtTranslator)
-    # else:
-    #     print("[PyNEWS] Error loading Qt language file for", locale, "language!")
     window = DownloadWindow()
     app.exec()
 
