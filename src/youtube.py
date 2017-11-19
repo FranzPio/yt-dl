@@ -30,14 +30,15 @@ class YouTube(QtCore.QObject):
                                                 ("3gpp", ["144p", "240p"])])
 
     finished = QtCore.pyqtSignal()
-    video_found = QtCore.pyqtSignal(list)
+    video_found = QtCore.pyqtSignal(pytube.YouTube)
     playlist_found = QtCore.pyqtSignal(list)
     success = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(str, str, int, tuple, bool)
+    progress = QtCore.pyqtSignal(int, int, int)
 
     last_downloaded = []
 
-    def __init__(self, page_url):
+    def __init__(self, page_url=None):
         super().__init__()
         self.page_url = page_url
 
@@ -48,20 +49,13 @@ class YouTube(QtCore.QObject):
                                 QtWidgets.QMessageBox.Warning, (), True)
             else:
                 yt = pytube.YouTube(self.page_url)
-                yt.register_on_progress_callback(self.on_progress)
-                video = yt.streams.filter(progressive=True).desc().all()
-                if video:
-                    self.success.emit()
-                    # TODO: instead of passing the StreamQuery, pass "self" -> download_video can be an instance method
-                    self.video_found.emit(video)
+                self.success.emit()
+                self.video_found.emit(yt)
         except (ValueError, AttributeError, urllib.error.URLError):
             try:
                 yt = pytube.YouTube("https://" + self.page_url)
-                yt.register_on_progress_callback(self.on_progress)
-                video = yt.streams.filter(progressive=True).desc().all()
-                if video:
-                    self.success.emit()
-                    self.video_found.emit(video)
+                self.success.emit()
+                self.video_found.emit(yt)
             except pytube.exceptions.RegexMatchError:
                 # this could be an invalid url OR we're maybe dealing with a playlist
                 self.find_playlist("https://" + self.page_url)
@@ -113,18 +107,7 @@ class YouTube(QtCore.QObject):
         elif video_format in reversed_resolution_dict.keys():
             return reversed_resolution_dict[video_format]
 
-    @staticmethod
-    def download_video(video_list, extension="mp4", resolution=None, destination=""):
-        raise NotImplementedError("Since this application is still under active development, not all features are "
-                                  "available yet. Be patient!")
-
-    @staticmethod
-    def download_playlist(video_list, extension="mp4", resolution=None, destination=""):
-        raise NotImplementedError("Since this application is still under active development, not all features are "
-                                  "available yet. Be patient!")
-
-    @staticmethod
-    def _download_video(video, extension, resolution, destination=""):
+    def download_video(self, video, extension, resolution, destination=""):
         # TODO: "really" do it (put downloading into thread, emit signals, update progress bar etc.)
         global stream_filesize
         YouTube.last_downloaded.clear()
@@ -147,10 +130,16 @@ class YouTube(QtCore.QObject):
         print(successful_downloads, "of", "1", "videos were downloaded successfully.")
         if errors:
             print(errors, "errors occurred.")
-        return
+            pass
+        # global stream_filesize
+        # stream_filesize = 10000
+        # import time
+        # for i in range(10000):
+        #     self.on_progress("test", "test", "test", 10000 - i)
+        #     time.sleep(0.05)
+        # self.finished.emit()
 
-    @staticmethod
-    def _download_playlist(video_list, extension, resolution, destination=""):
+    def download_playlist(self, video_list, extension, resolution, destination=""):
         # TODO: multi-threaded downloading -> playlists download faster
         global stream_filesize
         YouTube.last_downloaded.clear()
@@ -160,7 +149,7 @@ class YouTube(QtCore.QObject):
             print("Downloading", index + 1, "of", len(video_list), "...", flush=True)
             try:
                 yt = pytube.YouTube(video[1])
-                # yt.register_on_progress_callback(self.on_progress)
+                yt.register_on_progress_callback(self.on_progress)
                 video = yt.streams.filter(progressive=True).desc().all()
                 for stream in video:
                     if stream.subtype == extension and stream.resolution == resolution:
@@ -177,7 +166,6 @@ class YouTube(QtCore.QObject):
         print(successful_downloads, "of", len(video_list), "videos were downloaded successfully.")
         if errors:
             print(errors, "errors occurred.")
-        return
 
     def on_progress(self, stream, chunk, file_handle, bytes_remaining):
         # accessing stream.filesize was a bottleneck -> fixed by declaring global var in download_video
@@ -186,4 +174,4 @@ class YouTube(QtCore.QObject):
 
         # print(stream_filesize - bytes_remaining, "of", stream_filesize, "bytes downloaded,",
         #       bytes_remaining, "bytes remaining")
-        pass
+        self.progress.emit(stream_filesize - bytes_remaining, stream_filesize, bytes_remaining)
