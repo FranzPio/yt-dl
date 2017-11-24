@@ -9,6 +9,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from config import APP_PATH
 from converter import FFmpeg
 from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
+from download import Downloader
 from utils import LineEdit
 from youtube import YouTube
 import resources
@@ -186,6 +187,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox1 = QtWidgets.QHBoxLayout()
         hbox2 = QtWidgets.QHBoxLayout()
         hbox3 = QtWidgets.QHBoxLayout()
+        hbox4 = QtWidgets.QHBoxLayout()
 
         # TODO: don't just save it anywhere, but open a QFileDialog to select the desired download destination
         save_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
@@ -196,6 +198,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
         save_box.download_btn = QtWidgets.QPushButton("DOWNLOAD")
         save_box.download_btn.clicked.connect(self.on_download_clicked)
         save_box.download_btn.hide()
+        save_box.progress_bar = QtWidgets.QProgressBar()
+        save_box.progress_bar.hide()
+        save_box.progress_lbl = QtWidgets.QLabel()
+        save_box.progress_lbl.hide()
 
         hbox1.addWidget(save_box.continue_msg)
         vbox.addLayout(hbox1)
@@ -203,10 +209,32 @@ class DownloadWindow(QtWidgets.QMainWindow):
         vbox.addLayout(hbox2)
         hbox3.addWidget(save_box.download_btn)
         vbox.addLayout(hbox3)
+        hbox4.addWidget(save_box.progress_bar)
+        hbox4.addSpacing(5)
+        hbox4.addWidget(save_box.progress_lbl)
+        vbox.addLayout(hbox4)
 
         save_box.setLayout(vbox)
 
         return save_box
+
+    def update_progress(self, bytes_downloaded, stream_fsize, videos_downloaded, videos_total):
+        self.save_box.progress_bar.setMaximum(stream_fsize)
+        self.save_box.progress_bar.setFormat("%s of %s MB" %
+                                             (round(self.save_box.progress_bar.value() / 1000000, 1),
+                                              round(self.save_box.progress_bar.maximum() / 1000000, 1)))
+        self.save_box.progress_bar.setValue(bytes_downloaded)
+        self.save_box.progress_lbl.setText("(%s/%s)" % (videos_downloaded, videos_total))
+        QtWidgets.qApp.processEvents()
+
+    def on_download_success(self, successful_downloads, videos_total):
+        if videos_total - successful_downloads == 0:
+            if videos_total == 1:
+                show_msgbox("Information", "Video downloaded successfully!", QtWidgets.QMessageBox.Information)
+            else:
+                show_msgbox("Information", "All videos downloaded successfully!", QtWidgets.QMessageBox.Information)
+        else:
+            show_msgbox("Information", "%s of %s videos downloaded successfully!" % (successful_downloads, videos_total))
 
     def on_download_clicked(self):
         extension = YouTube.uglify(self.settings_box.format_dropdown.currentText())
@@ -216,22 +244,23 @@ class DownloadWindow(QtWidgets.QMainWindow):
             return
         elif len(self.url_box.videos_list_widget) == 1:
             if self.url_box.videos_list_widget.item(0).checkState() == QtCore.Qt.Checked:
-                # youtube = YouTube()
-                # self.yt.register_on_progress_callback(youtube.on_progress)
-                # thread = QtCore.QThread()
-                # youtube.moveToThread(thread)
-                # youtube.finished.connect(thread.quit)
-                # youtube.progress.connect(self.func)
-                # youtube.error.connect(show_msgbox)
-                #
-                # thread.started.connect(lambda: youtube.download_video(self.videos, extension, resolution))
-                # thread.finished.connect(lambda: print("finished!"))
-                #
-                # self.threads_workers.update({thread: youtube})
-                #
-                # thread.start()
-                youtube = YouTube()
-                youtube.download_video(self.videos, extension, resolution)
+                self.save_box.progress_bar.show()
+                self.save_box.progress_lbl.show()
+
+                downloader = Downloader(self.yt)
+                thread = QtCore.QThread()
+                downloader.moveToThread(thread)
+                downloader.finished.connect(thread.quit)
+                downloader.progress.connect(self.update_progress)
+                downloader.error.connect(show_msgbox)
+                downloader.success.connect(self.on_download_success)
+
+                thread.started.connect(lambda: downloader.download_video(self.videos, extension, resolution))
+                thread.finished.connect(lambda: print("finished!"))
+
+                self.threads_workers.update({thread: downloader})
+
+                thread.start()
             else:
                 return
         else:
@@ -240,7 +269,23 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 if self.url_box.videos_list_widget.item(index).checkState() == QtCore.Qt.Checked:
                     checked_videos.append(video)
             if checked_videos:
-                YouTube._download_playlist(checked_videos, extension, resolution)
+                self.save_box.progress_bar.show()
+                self.save_box.progress_lbl.show()
+
+                downloader = Downloader()
+                thread = QtCore.QThread()
+                downloader.moveToThread(thread)
+                downloader.finished.connect(thread.quit)
+                downloader.progress.connect(self.update_progress)
+                downloader.error.connect(show_msgbox)
+                downloader.success.connect(self.on_download_success)
+
+                thread.started.connect(lambda: downloader.download_playlist(checked_videos, extension, resolution))
+                thread.finished.connect(lambda: print("finished!"))
+
+                self.threads_workers.update({thread: downloader})
+
+                thread.start()
             else:
                 return
 
@@ -274,9 +319,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     @staticmethod
     def on_convert_clicked():
-        if YouTube.last_downloaded:
+        if Downloader.last_downloaded:
             path_list = []
-            for stream in YouTube.last_downloaded:
+            for stream in Downloader.last_downloaded:
                 path_list.append(os.path.abspath(stream.default_filename))
             # TODO: put this in threads (GUI freezes) or use ffmpeg's async interface (but idk how that works...)
             #       (+ error slots, progress indicator,...)
@@ -377,6 +422,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.save_box.continue_msg.hide()
         self.save_box.destination_lbl.show()
         self.save_box.download_btn.show()
+        # self.save_box.progress_bar.show()
+        # self.save_box.progress_lbl.show()
         self.convert_box.continue_msg.hide()
         self.convert_box.experimental_msg.show()
         self.convert_box.convert_btn.show()
