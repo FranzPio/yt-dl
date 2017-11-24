@@ -34,7 +34,6 @@ class YouTube(QtCore.QObject):
     playlist_found = QtCore.pyqtSignal(list)
     success = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(str, str, int, tuple, bool)
-    progress = QtCore.pyqtSignal(int, int, int)
 
     last_downloaded = []
 
@@ -106,72 +105,3 @@ class YouTube(QtCore.QObject):
             return reversed_format_dict[video_format]
         elif video_format in reversed_resolution_dict.keys():
             return reversed_resolution_dict[video_format]
-
-    def download_video(self, video, extension, resolution, destination=""):
-        # TODO: "really" do it (put downloading into thread, emit signals, update progress bar etc.)
-        global stream_filesize
-        YouTube.last_downloaded.clear()
-        successful_downloads = 0
-        errors = 0
-        print("Downloading ", "1", "of", "1", "...", flush=True)
-        try:
-            for stream in video:
-                if stream.subtype == extension and stream.resolution == resolution:
-                    stream_filesize = stream.filesize
-                    stream.download(destination)
-                    break
-        except Exception:
-            print("An error occurred:\n", sys.exc_info())
-            errors += 1
-        else:
-            successful_downloads += 1
-            YouTube.last_downloaded.append(stream)
-
-        print(successful_downloads, "of", "1", "videos were downloaded successfully.")
-        if errors:
-            print(errors, "errors occurred.")
-            pass
-        # global stream_filesize
-        # stream_filesize = 10000
-        # import time
-        # for i in range(10000):
-        #     self.on_progress("test", "test", "test", 10000 - i)
-        #     time.sleep(0.05)
-        # self.finished.emit()
-
-    def download_playlist(self, video_list, extension, resolution, destination=""):
-        # TODO: multi-threaded downloading -> playlists download faster
-        global stream_filesize
-        YouTube.last_downloaded.clear()
-        successful_downloads = 0
-        errors = 0
-        for index, video in enumerate(video_list):
-            print("Downloading", index + 1, "of", len(video_list), "...", flush=True)
-            try:
-                yt = pytube.YouTube(video[1])
-                yt.register_on_progress_callback(self.on_progress)
-                video = yt.streams.filter(progressive=True).desc().all()
-                for stream in video:
-                    if stream.subtype == extension and stream.resolution == resolution:
-                        stream_filesize = stream.filesize
-                        stream.download(destination)
-
-            except Exception:
-                print("An error occurred:\n", sys.exc_info())
-                errors += 1
-            else:
-                successful_downloads += 1
-                YouTube.last_downloaded.append(stream)
-
-        print(successful_downloads, "of", len(video_list), "videos were downloaded successfully.")
-        if errors:
-            print(errors, "errors occurred.")
-
-    def on_progress(self, stream, chunk, file_handle, bytes_remaining):
-        # accessing stream.filesize was a bottleneck -> fixed by declaring global var in download_video
-        #
-        # printing this data luckily doesn't affect performance negatively, now let's see how fast Qt is...
-
-        # print(stream_filesize - bytes_remaining, "of", stream_filesize, "bytes downloaded,",
-        #       bytes_remaining, "bytes remaining")
-        self.progress.emit(stream_filesize - bytes_remaining, stream_filesize, bytes_remaining)
