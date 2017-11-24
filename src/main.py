@@ -234,7 +234,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
             else:
                 show_msgbox("Information", "All videos downloaded successfully!", QtWidgets.QMessageBox.Information)
         else:
-            show_msgbox("Information", "%s of %s videos downloaded successfully!" % (successful_downloads, videos_total))
+            show_msgbox("Information", "%s of %s videos downloaded successfully!"
+                        % (successful_downloads, videos_total), QtWidgets.QMessageBox.Information)
 
     def on_download_clicked(self):
         extension = YouTube.uglify(self.settings_box.format_dropdown.currentText())
@@ -245,7 +246,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
         elif len(self.url_box.videos_list_widget) == 1:
             if self.url_box.videos_list_widget.item(0).checkState() == QtCore.Qt.Checked:
                 self.save_box.progress_bar.show()
+                self.save_box.progress_bar.reset()
                 self.save_box.progress_lbl.show()
+                self.save_box.progress_lbl.clear()
 
                 downloader = Downloader(self.yt)
                 thread = QtCore.QThread()
@@ -270,7 +273,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     checked_videos.append(video)
             if checked_videos:
                 self.save_box.progress_bar.show()
+                self.save_box.progress_bar.reset()
                 self.save_box.progress_lbl.show()
+                self.save_box.progress_lbl.clear()
 
                 downloader = Downloader()
                 thread = QtCore.QThread()
