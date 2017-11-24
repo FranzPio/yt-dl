@@ -56,7 +56,13 @@ class Downloader(QtCore.QObject):
                 yt.register_on_progress_callback(self.on_progress)
                 video = yt.streams.filter(progressive=True).desc().all()
                 stream = self.get_stream(video, extension, resolution)
-                stream.download(destination)
+                if stream is None:
+                    self.error.emit("Error", "Video #%s not available in the given resolution (%s).\n"
+                                    "This is a bug that will be fixed...some day..."
+                                    % (self.video_downloading, resolution), QtWidgets.QMessageBox.Critical, (), False)
+                    continue
+                else:
+                    stream.download(destination)
             except Exception:
                 self.error.emit("Error", "An error occurred during the downloading. See below for details.",
                                 QtWidgets.QMessageBox.Critical, sys.exc_info(), True)
