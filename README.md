@@ -28,6 +28,7 @@ sudo pip3 install -U pytube PyQt5 beautifulsoup4
 ##### (optional) Fix appearance
 on some systems using the distro's PyQt package results in an improved appearance, e.g. on Debian this can be done as follows:
 ```
+pip3 uninstall PyQt5 sip
 sudo apt install python3-pyqt5
 ```
 ##### Clone repo
