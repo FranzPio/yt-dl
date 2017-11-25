@@ -16,7 +16,7 @@ easy-to-use YouTube downloader (GUI), created with PyQt5, pytube and beautifulso
 
 ### Installation
 #### Windows:
-execute `yt-dl_x.x.x_setup.exe` and follow the instructions
+download [`yt-dl_x.x.x_setup.exe`](https://github.com/FranzPio/yt-dl/releases), execute it and follow the instructions
 
 #### Source:
 (extrapolate accordingly for non-Debian distros)
