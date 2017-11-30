@@ -9,6 +9,7 @@ class Downloader(QtCore.QObject):
     error = QtCore.pyqtSignal(str, str, int, tuple, bool)
     success = QtCore.pyqtSignal(int, int)
     progress = QtCore.pyqtSignal(int, int, int, int)
+    pulse = QtCore.pyqtSignal(bool)
 
     last_downloaded = []
 
@@ -52,10 +53,12 @@ class Downloader(QtCore.QObject):
         for video in video_list:
             self.video_downloading += 1
             try:
+                self.pulse.emit(True)
                 yt = pytube.YouTube(video[1])
                 yt.register_on_progress_callback(self.on_progress)
                 video = yt.streams.filter(progressive=True).desc().all()
                 stream = self.get_stream(video, extension, resolution)
+                self.pulse.emit(False)
                 if stream is None:
                     self.error.emit("Error", "Video #%s not available in the given resolution (%s).\n"
                                     "This is a bug that will be fixed...some day..."
