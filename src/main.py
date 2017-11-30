@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import collections.abc
+import functools
 import os.path
 import sys
 import traceback
@@ -218,6 +219,20 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         return save_box
 
+    def create_download_thread(self, yt=None):
+        downloader = Downloader(yt)
+        thread = QtCore.QThread()
+        downloader.moveToThread(thread)
+        downloader.finished.connect(thread.quit)
+        downloader.progress.connect(self.update_progress)
+        downloader.error.connect(show_msgbox)
+        downloader.success.connect(self.on_download_success)
+        downloader.pulse.connect(self.toggle_progress_pulse)
+
+        self.threads_workers.update({thread: downloader})
+
+        return thread, downloader
+
     def update_progress(self, bytes_downloaded, stream_fsize, videos_downloaded, videos_total):
         self.save_box.progress_bar.setMaximum(stream_fsize)
         self.save_box.progress_bar.setFormat("%s of %s MB" %
@@ -225,7 +240,12 @@ class DownloadWindow(QtWidgets.QMainWindow):
                                               round(self.save_box.progress_bar.maximum() / 1000000, 1)))
         self.save_box.progress_bar.setValue(bytes_downloaded)
         self.save_box.progress_lbl.setText("(%s/%s)" % (videos_downloaded, videos_total))
-        QtWidgets.qApp.processEvents()
+
+    def toggle_progress_pulse(self, should_pulse):
+        if should_pulse:
+            self.save_box.progress_bar.setRange(0, 0)
+        else:
+            self.save_box.progress_bar.setRange(0, 1)
 
     def on_download_success(self, successful_downloads, videos_total):
         if videos_total - successful_downloads == 0:
@@ -243,56 +263,34 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         if len(self.url_box.videos_list_widget) < 1:
             return
-        elif len(self.url_box.videos_list_widget) == 1:
-            if self.url_box.videos_list_widget.item(0).checkState() == QtCore.Qt.Checked:
-                self.save_box.progress_bar.show()
-                self.save_box.progress_bar.reset()
-                self.save_box.progress_lbl.show()
-                self.save_box.progress_lbl.clear()
-
-                downloader = Downloader(self.yt)
-                thread = QtCore.QThread()
-                downloader.moveToThread(thread)
-                downloader.finished.connect(thread.quit)
-                downloader.progress.connect(self.update_progress)
-                downloader.error.connect(show_msgbox)
-                downloader.success.connect(self.on_download_success)
-
-                thread.started.connect(lambda: downloader.download_video(self.videos, extension, resolution))
-                thread.finished.connect(lambda: print("finished!"))
-
-                self.threads_workers.update({thread: downloader})
-
-                thread.start()
-            else:
-                return
         else:
-            checked_videos = []
-            for index, video in enumerate(self.playlist_videos):
-                if self.url_box.videos_list_widget.item(index).checkState() == QtCore.Qt.Checked:
-                    checked_videos.append(video)
-            if checked_videos:
-                self.save_box.progress_bar.show()
-                self.save_box.progress_bar.reset()
-                self.save_box.progress_lbl.show()
-                self.save_box.progress_lbl.clear()
+            self.save_box.progress_bar.show()
+            self.save_box.progress_bar.reset()
+            self.save_box.progress_lbl.show()
+            self.save_box.progress_lbl.clear()
 
-                downloader = Downloader()
-                thread = QtCore.QThread()
-                downloader.moveToThread(thread)
-                downloader.finished.connect(thread.quit)
-                downloader.progress.connect(self.update_progress)
-                downloader.error.connect(show_msgbox)
-                downloader.success.connect(self.on_download_success)
+            if len(self.url_box.videos_list_widget) == 1:
+                if self.url_box.videos_list_widget.item(0).checkState() == QtCore.Qt.Checked:
+                    thread, downloader = self.create_download_thread(self.yt)
 
-                thread.started.connect(lambda: downloader.download_playlist(checked_videos, extension, resolution))
-                thread.finished.connect(lambda: print("finished!"))
+                    thread.started.connect(functools.partial(
+                        downloader.download_video, self.videos, extension, resolution))
+                    thread.finished.connect(lambda: print("finished!"))
 
-                self.threads_workers.update({thread: downloader})
-
-                thread.start()
+                    thread.start()
             else:
-                return
+                checked_videos = []
+                for index, video in enumerate(self.playlist_videos):
+                    if self.url_box.videos_list_widget.item(index).checkState() == QtCore.Qt.Checked:
+                        checked_videos.append(video)
+                if checked_videos:
+                    thread, downloader = self.create_download_thread()
+
+                    thread.started.connect(functools.partial(
+                        downloader.download_playlist, checked_videos, extension, resolution))
+                    thread.finished.connect(lambda: print("finished!"))
+
+                    thread.start()
 
     def create_convert_box(self):
         convert_box = QtWidgets.QGroupBox("4. (not really) Convert downloaded file")
