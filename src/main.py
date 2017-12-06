@@ -432,12 +432,24 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.convert_box.convert_btn.show()
 
 
+def setup_palette(color, widget_list=None, color_role=QtGui.QPalette.Highlight):
+    palette = QtGui.QPalette()
+    palette.setColor(color_role, color)
+    if widget_list:
+        for widget in widget_list:
+            QtWidgets.qApp.setPalette(palette, widget)
+    else:
+        QtWidgets.qApp.setPalette(palette)
+
+
 def startup():
     global window
     logfile = os.path.join(APP_PATH, "yt-dl.log")
     if os.path.isfile(logfile):
         os.remove(logfile)
     app = QtWidgets.QApplication(sys.argv)
+    app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
+    setup_palette(QtGui.QColor(233, 15, 15), ("QProgressBar",))
     window = DownloadWindow()
     app.exec()
 
