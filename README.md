@@ -12,7 +12,7 @@ easy-to-use YouTube downloader (GUI), created with PyQt5, pytube and beautifulso
 - bundle ffmpeg or automatically download + install it (needed to combine yt's separate audio / video streams)
 - set ID3 tags to files (e.g. title, creator, thumbnail)
 
-[...]
+[...] (see 'Projects' tab)
 
 ### Installation
 #### Windows:
