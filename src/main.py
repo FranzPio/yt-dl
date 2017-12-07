@@ -448,7 +448,9 @@ def startup():
     if os.path.isfile(logfile):
         os.remove(logfile)
     app = QtWidgets.QApplication(sys.argv)
-    app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
+    # TODO: this is ugly and stupid af -> add option to change this
+    if sys.platform == "win32":
+        app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
     setup_palette(QtGui.QColor(255, 0, 0), ("QProgressBar",))
     window = DownloadWindow()
     app.exec()
