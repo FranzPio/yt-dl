@@ -434,7 +434,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
 def setup_palette(color, widget_list=None, color_role=QtGui.QPalette.Highlight):
     palette = QtGui.QPalette()
-    palette.setColor(color_role, color)
+    palette.setColor(QtGui.QPalette.Active, color_role, color)
     if widget_list:
         for widget in widget_list:
             QtWidgets.qApp.setPalette(palette, widget)
@@ -449,7 +449,7 @@ def startup():
         os.remove(logfile)
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
-    setup_palette(QtGui.QColor(233, 15, 15), ("QProgressBar",))
+    setup_palette(QtGui.QColor(255, 0, 0), ("QProgressBar",))
     window = DownloadWindow()
     app.exec()
 
