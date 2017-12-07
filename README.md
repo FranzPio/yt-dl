@@ -3,7 +3,7 @@ easy-to-use YouTube downloader (GUI), created with PyQt5, pytube and beautifulso
 
 ### Features
 - download videos or playlists from YouTube
-- mp4, webm, 3gp, flv supported
+- mp4, webm, 3gpp supported
 - extract audio from downloaded video files
 
 ### To do
