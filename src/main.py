@@ -11,7 +11,7 @@ from config import APP_PATH
 from converter import FFmpeg
 from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
 from download import Downloader
-from utils import LineEdit
+from utils import LineEdit, ElidedLabel
 from youtube import YouTube
 import resources
 
@@ -48,6 +48,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.videos = None
         self.playlist_videos = None
         self.video_formats = None
+        self.destination = ""
 
         self.init_ui()
 
@@ -190,12 +191,15 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox3 = QtWidgets.QHBoxLayout()
         hbox4 = QtWidgets.QHBoxLayout()
 
-        # TODO: don't just save it anywhere, but open a QFileDialog to select the desired download destination
         save_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
-        save_box.destination_lbl = QtWidgets.QLabel("video(s) will be saved to current working directory\n"
-                                                    "NOTE: This is a TEMPORARY solution just to make it work.")
-        save_box.destination_lbl.setWordWrap(True)
+        save_box.destination_lbl = ElidedLabel()
+        save_box.destination_lbl.setText("Click \"...\" to specify download destination.")
         save_box.destination_lbl.hide()
+        save_box.fdialog_btn = QtWidgets.QPushButton()
+        # TODO: nice folder icon instead of ugly dots
+        save_box.fdialog_btn.setText("...")
+        save_box.fdialog_btn.clicked.connect(self.choose_download_directory)
+        save_box.fdialog_btn.hide()
         save_box.download_btn = QtWidgets.QPushButton("DOWNLOAD")
         save_box.download_btn.clicked.connect(self.on_download_clicked)
         save_box.download_btn.hide()
@@ -207,6 +211,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox1.addWidget(save_box.continue_msg)
         vbox.addLayout(hbox1)
         hbox2.addWidget(save_box.destination_lbl)
+        hbox2.addSpacing(5)
+        hbox2.addWidget(save_box.fdialog_btn)
         vbox.addLayout(hbox2)
         hbox3.addWidget(save_box.download_btn)
         vbox.addLayout(hbox3)
@@ -218,6 +224,12 @@ class DownloadWindow(QtWidgets.QMainWindow):
         save_box.setLayout(vbox)
 
         return save_box
+
+    def choose_download_directory(self):
+        dst_folder = QtWidgets.QFileDialog.getExistingDirectory(self, "Choose download directory", os.getcwd())
+        if dst_folder:
+            self.destination = dst_folder
+            self.save_box.destination_lbl.setText(self.destination)
 
     def create_download_thread(self, yt=None):
         downloader = Downloader(yt)
@@ -274,7 +286,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     thread, downloader = self.create_download_thread(self.yt)
 
                     thread.started.connect(functools.partial(
-                        downloader.download_video, self.videos, extension, resolution))
+                        downloader.download_video, self.videos, extension, resolution, self.destination))
                     thread.finished.connect(lambda: print("finished!"))
 
                     thread.start()
@@ -287,13 +299,13 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     thread, downloader = self.create_download_thread()
 
                     thread.started.connect(functools.partial(
-                        downloader.download_playlist, checked_videos, extension, resolution))
+                        downloader.download_playlist, checked_videos, extension, resolution, self.destination))
                     thread.finished.connect(lambda: print("finished!"))
 
                     thread.start()
 
     def create_convert_box(self):
-        convert_box = QtWidgets.QGroupBox("4. (not really) Convert downloaded file")
+        convert_box = QtWidgets.QGroupBox("4. Convert downloaded file")
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
@@ -424,6 +436,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.settings_box.resolution_dropdown.show()
         self.save_box.continue_msg.hide()
         self.save_box.destination_lbl.show()
+        self.save_box.fdialog_btn.show()
         self.save_box.download_btn.show()
         # self.save_box.progress_bar.show()
         # self.save_box.progress_lbl.show()

@@ -125,8 +125,7 @@ class AboutDialog(QtWidgets.QDialog):
 
         self.desc_lbl = QtWidgets.QLabel("An easy-to-use YouTube downloader (GUI),<br>"
                                          "created with PyQt5, pytube and beautifulsoup4.<br>"
-                                         "Icon: composition of illustrations from "
-                                         "<a href=\"" + ICONS8_URL + "\">" + ICONS8_URL + "</a><br>"
+                                         "Icons: <a href=\"" + ICONS8_URL + "\">" + ICONS8_URL + "</a><br>"
                                          "Loading GIF: <a href=\"" + LOADINGIO_URL + "\">" + LOADINGIO_URL + "</a><br>"
                                          "Github page: <a href=\"" + GITHUB_URL + "\">" + GITHUB_URL + "</a>")
         self.desc_lbl.setTextFormat(QtCore.Qt.RichText)
