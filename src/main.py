@@ -38,17 +38,23 @@ sys.excepthook = handle_uncaught_exception
 
 
 class DownloadWindow(QtWidgets.QMainWindow):
+
+    MODE_EXTRACT = 0
+    MODE_CONVERT = 1
+
     def __init__(self):
         super().__init__()
         self.splashie = show_splash(self)
         QtCore.QTimer.singleShot(1200, self.show_window)
 
-        self.threads_workers = {}
+        self.threads_workers = collections.OrderedDict()
 
         self.videos = None
         self.playlist_videos = None
         self.video_formats = None
-        self.destination = ""
+        self.destination = os.getcwd()
+        self.postprocess_mode = None
+        self.audio_codecs = {}
 
         self.init_ui()
 
@@ -59,6 +65,14 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def show_window(self):
         self.show()
         self.splashie.finish(self)
+
+    def create_thread(self, WorkerClass, *args, **kwargs):
+        worker = WorkerClass(*args, **kwargs)
+        thread = QtCore.QThread()
+        worker.moveToThread(thread)
+        self.threads_workers.update({thread: worker})
+
+        return thread, worker
 
     def init_ui(self):
         self.toolbar = self.create_toolbar()
@@ -151,7 +165,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         return url_box
 
     def create_settings_box(self):
-        settings_box = QtWidgets.QGroupBox("2. Select quality and format ")
+        settings_box = QtWidgets.QGroupBox("2. Select quality and format")
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
@@ -183,7 +197,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.settings_box.resolution_dropdown.addItem(YouTube.prettify(i))
 
     def create_save_box(self):
-        save_box = QtWidgets.QGroupBox("3. Choose download destination")
+        save_box = QtWidgets.QGroupBox("3. Download videos")
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
@@ -201,6 +215,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         save_box.fdialog_btn.clicked.connect(self.choose_download_directory)
         save_box.fdialog_btn.hide()
         save_box.download_btn = QtWidgets.QPushButton("DOWNLOAD")
+        save_box.download_btn.setDisabled(True)
         save_box.download_btn.clicked.connect(self.on_download_clicked)
         save_box.download_btn.hide()
         save_box.progress_bar = QtWidgets.QProgressBar()
@@ -230,20 +245,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         if dst_folder:
             self.destination = dst_folder
             self.save_box.destination_lbl.setText(self.destination)
-
-    def create_download_thread(self, yt=None):
-        downloader = Downloader(yt)
-        thread = QtCore.QThread()
-        downloader.moveToThread(thread)
-        downloader.finished.connect(thread.quit)
-        downloader.progress.connect(self.update_progress)
-        downloader.error.connect(show_msgbox)
-        downloader.success.connect(self.on_download_success)
-        downloader.pulse.connect(self.toggle_progress_pulse)
-
-        self.threads_workers.update({thread: downloader})
-
-        return thread, downloader
+            self.save_box.download_btn.setEnabled(True)
 
     def update_progress(self, bytes_downloaded, stream_fsize, videos_downloaded, videos_total):
         self.save_box.progress_bar.setMaximum(stream_fsize)
@@ -260,6 +262,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.save_box.progress_bar.setRange(0, 1)
 
     def on_download_success(self, successful_downloads, videos_total):
+        self.convert_box.extract_rbtn.setEnabled(True)
+        self.convert_box.convert_rbtn.setEnabled(True)
+
         if videos_total - successful_downloads == 0:
             if videos_total == 1:
                 show_msgbox("Information", "Video downloaded successfully!", QtWidgets.QMessageBox.Information)
@@ -281,9 +286,28 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.save_box.progress_lbl.show()
             self.save_box.progress_lbl.clear()
 
+            self.audio_codecs.clear()
+            self.convert_box.extract_rbtn.setAutoExclusive(False)
+            self.convert_box.convert_rbtn.setAutoExclusive(False)
+            self.convert_box.extract_rbtn.setChecked(False)
+            self.convert_box.convert_rbtn.setChecked(False)
+            self.convert_box.extract_rbtn.setAutoExclusive(True)
+            self.convert_box.convert_rbtn.setAutoExclusive(True)
+
+            self.convert_box.extract_status.hide()
+            self.convert_box.extract_rbtn.setDisabled(True)
+            self.convert_box.convert_rbtn.setDisabled(True)
+            self.convert_box.convert_btn.setDisabled(True)
+
             if len(self.url_box.videos_list_widget) == 1:
                 if self.url_box.videos_list_widget.item(0).checkState() == QtCore.Qt.Checked:
-                    thread, downloader = self.create_download_thread(self.yt)
+                    thread, downloader = self.create_thread(Downloader, self.yt)
+
+                    downloader.finished.connect(thread.quit)
+                    downloader.success.connect(self.on_download_success)
+                    downloader.error.connect(show_msgbox)
+                    downloader.progress.connect(self.update_progress)
+                    downloader.pulse.connect(self.toggle_progress_pulse)
 
                     thread.started.connect(functools.partial(
                         downloader.download_video, self.videos, extension, resolution, self.destination))
@@ -296,7 +320,13 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     if self.url_box.videos_list_widget.item(index).checkState() == QtCore.Qt.Checked:
                         checked_videos.append(video)
                 if checked_videos:
-                    thread, downloader = self.create_download_thread()
+                    thread, downloader = self.create_thread(Downloader)
+
+                    downloader.finished.connect(thread.quit)
+                    downloader.success.connect(self.on_download_success)
+                    downloader.error.connect(show_msgbox)
+                    downloader.progress.connect(self.update_progress)
+                    downloader.pulse.connect(self.toggle_progress_pulse)
 
                     thread.started.connect(functools.partial(
                         downloader.download_playlist, checked_videos, extension, resolution, self.destination))
@@ -305,46 +335,128 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     thread.start()
 
     def create_convert_box(self):
-        convert_box = QtWidgets.QGroupBox("4. Convert downloaded file")
+        convert_box = QtWidgets.QGroupBox("4. Post-processing")
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
         hbox2 = QtWidgets.QHBoxLayout()
         hbox3 = QtWidgets.QHBoxLayout()
+        hbox4 = QtWidgets.QHBoxLayout()
+        # hbox5 = QtWidgets.QHBoxLayout()
+        # hbox6 = QtWidgets.QHBoxLayout()
 
         convert_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
-        convert_box.experimental_msg = QtWidgets.QLabel("EXPERIMENTAL: extract audio to file,"
-                                                        "\nconsole window recommended (for now)"
-                                                        "\n(ffprobe + ffmpeg are required for this)")
-        convert_box.experimental_msg.hide()
+
+        convert_box.extract_rbtn = QtWidgets.QRadioButton()
+        convert_box.extract_rbtn.setDisabled(True)
+        convert_box.extract_rbtn.setText("Extract audio only")
+        convert_box.extract_rbtn.clicked.connect(self.on_audio_mode_switched)
+        convert_box.extract_rbtn.hide()
+
+        convert_box.convert_rbtn = QtWidgets.QRadioButton()
+        convert_box.convert_rbtn.setDisabled(True)
+        convert_box.convert_rbtn.setText("Convert audio")
+        convert_box.convert_rbtn.clicked.connect(self.on_audio_mode_switched)
+        convert_box.convert_rbtn.hide()
+
+        convert_box.loading_indicator = QtWidgets.QLabel()
+        convert_box.loading_indicator.hide()
+        convert_box.spinning_wheel = QtGui.QMovie(":/rolling.gif")
+        convert_box.spinning_wheel.setScaledSize(QtCore.QSize(22, 22))
+
+        convert_box.extract_status = QtWidgets.QLabel()
+        convert_box.extract_status.hide()
+
+        convert_box.msg = QtWidgets.QLabel("nothing here so far :/")
+        convert_box.msg.hide()
+
         convert_box.convert_btn = QtWidgets.QPushButton("CONVERT")
         convert_box.convert_btn.clicked.connect(self.on_convert_clicked)
+        convert_box.convert_btn.setDisabled(True)
         convert_box.convert_btn.hide()
 
         hbox1.addWidget(convert_box.continue_msg)
         vbox.addLayout(hbox1)
-        hbox2.addWidget(convert_box.experimental_msg)
+        hbox2.addWidget(convert_box.extract_rbtn)
+        hbox2.addStretch(1)
+        hbox2.addWidget(convert_box.convert_rbtn)
+        hbox2.addStretch(1)
         vbox.addLayout(hbox2)
-        hbox3.addWidget(convert_box.convert_btn)
+        hbox3.addSpacing(20)
+        hbox3.addWidget(convert_box.loading_indicator)
+        hbox3.addSpacing(5)
+        hbox3.addWidget(convert_box.extract_status, 1)
+        hbox3.addStretch(1)
+        hbox3.addWidget(convert_box.msg)
         vbox.addLayout(hbox3)
+        vbox.addSpacing(5)
+        hbox4.addWidget(convert_box.convert_btn)
+        vbox.addLayout(hbox4)
 
         convert_box.setLayout(vbox)
 
         return convert_box
 
-    @staticmethod
-    def on_convert_clicked():
-        if Downloader.last_downloaded:
-            path_list = []
-            for stream in Downloader.last_downloaded:
-                path_list.append(os.path.abspath(stream.default_filename))
-            # TODO: put this in threads (GUI freezes) or use ffmpeg's async interface (but idk how that works...)
-            #       (+ error slots, progress indicator,...)
-            for index, path in enumerate(path_list):
-                print("Converting", index, "of", len(path_list), "...")
+    def on_audio_mode_switched(self):
+        if self.convert_box.extract_rbtn.isChecked() and Downloader.last_downloaded:
+            self.postprocess_mode = self.MODE_EXTRACT
+            self.convert_box.convert_btn.setText("EXTRACT")
+            self.convert_box.loading_indicator.setMovie(self.convert_box.spinning_wheel)
+            self.convert_box.loading_indicator.show()
+
+            self.convert_box.extract_status.show()
+            self.convert_box.extract_status.setText("Detecting audio format...")
+            self.convert_box.spinning_wheel.start()
+
+            self.detect_audio_format()
+            self.convert_box.convert_btn.setEnabled(True)
+        elif self.convert_box.convert_rbtn.isChecked() and Downloader.last_downloaded:
+            self.postprocess_mode = self.MODE_CONVERT
+            self.convert_box.convert_btn.setText("CONVERT")
+            self.convert_box.convert_btn.setEnabled(True)
+
+    def detect_audio_format(self):
+        path_list = []
+        for stream in Downloader.last_downloaded:
+            path_list.append(os.path.join(self.destination, stream.default_filename))
+        for path in path_list:
+            thread, converter = self.create_thread(FFmpeg, path)
+
+            converter.finished.connect(thread.quit)
+            converter.detection_success.connect(self.format_detection_success)
+            converter.error.connect(show_msgbox)
+
+            thread.started.connect(converter.get_audio_codec)
+
+            thread.start()
+
+        last_thread = list(self.threads_workers.keys())[-1]
+        while not last_thread.isFinished():
+            QtWidgets.qApp.processEvents()
+            last_thread.wait(20)
+
+        self.display_formats()
+
+    def format_detection_success(self, path, codec):
+        # print("Codec:", codec, "[", path, "]")
+        self.audio_codecs[path] = codec
+        self.convert_box.spinning_wheel.stop()
+        self.convert_box.loading_indicator.hide()
+
+    def display_formats(self):
+        unique_codecs = set(codec for codec in self.audio_codecs.values())
+        description = "Audio format: " if not len(unique_codecs) > 1 else "Audio formats: "
+        self.convert_box.extract_status.setText(description + ", ".join(unique_codecs).upper())
+
+    def on_convert_clicked(self):
+        if self.audio_codecs and self.postprocess_mode == self.MODE_EXTRACT:
+            for index, (path, codec) in enumerate(self.audio_codecs.items()):
+                print("Converting", index, "of", len(self.audio_codecs), "...")
                 converter = FFmpeg(path)
-                converter.extract_audio()
+                converter.extract_audio(codec)
             print("Finished (more or less) successfully.")
+        elif self.audio_codecs and self.postprocess_mode == self.MODE_CONVERT:
+            show_msgbox("Sorry", "This feature is not supported yet.", QtWidgets.QMessageBox.Warning)
 
     def get_videos_from_url(self, page_url=None):
         self.url_box.get_videos_btn.setDisabled(True)
@@ -355,9 +467,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.url_box.loading_indicator.setMovie(self.url_box.spinning_wheel)
         self.url_box.spinning_wheel.start()
 
-        youtube = YouTube(page_url)
-        thread = QtCore.QThread()
-        youtube.moveToThread(thread)
+        thread, youtube = self.create_thread(YouTube, page_url)
+
         youtube.finished.connect(thread.quit)
         youtube.video_found.connect(self.on_video_found)
         youtube.playlist_found.connect(self.on_playlist_found)
@@ -366,8 +477,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         thread.started.connect(youtube.find_videos)
         thread.finished.connect(self.on_thread_finished)
-
-        self.threads_workers.update({thread: youtube})
 
         thread.start()
 
@@ -438,10 +547,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.save_box.destination_lbl.show()
         self.save_box.fdialog_btn.show()
         self.save_box.download_btn.show()
-        # self.save_box.progress_bar.show()
-        # self.save_box.progress_lbl.show()
         self.convert_box.continue_msg.hide()
-        self.convert_box.experimental_msg.show()
+        self.convert_box.extract_rbtn.show()
+        self.convert_box.convert_rbtn.show()
         self.convert_box.convert_btn.show()
 
 
