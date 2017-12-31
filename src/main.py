@@ -386,7 +386,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.video_formats.update({format: []})
         for streams in video:
             self.video_formats[streams.subtype].append(streams.resolution)
-        for format, resolution in self.video_formats.items():
+        for format, resolution in list(self.video_formats.items()):
             if not resolution:
                 self.video_formats.pop(format)
 
