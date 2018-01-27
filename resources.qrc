@@ -5,5 +5,6 @@
     <file alias="youtube_splash_screen.png">resources/youtube_splash_screen.png</file>
     <file alias="rolling.gif">resources/rolling.gif</file>
     <file alias="LICENSE">LICENSE</file>
+    <file alias="lang_de.qm">resources/lang_de.qm</file>
 </qresource>
 </RCC>

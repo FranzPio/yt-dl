@@ -37,7 +37,7 @@ class Downloader(QtCore.QObject):
             stream = self.get_stream(video, extension, resolution)
             stream.download(destination)
         except Exception:
-            self.error.emit("Error", "An error occurred during the downloading. See below for details.",
+            self.error.emit(self.tr("Error"), self.tr("An error occurred during the downloading. See below for details."),
                             QtWidgets.QMessageBox.Critical, sys.exc_info(), True)
         else:
             successful_downloads += 1
@@ -60,14 +60,14 @@ class Downloader(QtCore.QObject):
                 stream = self.get_stream(video, extension, resolution)
                 self.pulse.emit(False)
                 if stream is None:
-                    self.error.emit("Error", "Video #%s not available in the given resolution (%s).\n"
-                                    "This is a bug that will be fixed...some day..."
+                    self.error.emit(self.tr("Error"), self.tr("Video #%s not available in the given resolution (%s).\n"
+                                    "This is a bug that will be fixed...some day...")
                                     % (self.video_downloading, resolution), QtWidgets.QMessageBox.Critical, (), False)
                     continue
                 else:
                     stream.download(destination)
             except Exception:
-                self.error.emit("Error", "An error occurred during the downloading. See below for details.",
+                self.error.emit(self.tr("Error"), self.tr("An error occurred during the downloading. See below for details."),
                                 QtWidgets.QMessageBox.Critical, sys.exc_info(), True)
             else:
                 successful_downloads += 1

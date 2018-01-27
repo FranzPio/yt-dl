@@ -25,8 +25,11 @@ def handle_uncaught_exception(exc_type, exc_obj, exc_tb):
         return
     elif issubclass(exc_type, Exception):
         QtCore.QMetaObject.invokeMethod(window, "show_msgbox",
-                                        QtCore.Q_ARG(str, "Error"),
-                                        QtCore.Q_ARG(str, "An unexpected error occurred. See below for details."),
+                                        QtCore.Q_ARG(str, QtCore.QCoreApplication.translate("handle_uncaught_exception",
+                                                                                            "Error")),
+                                        QtCore.Q_ARG(str, QtCore.QCoreApplication.translate("handle_uncaught_exception",
+                                                                                            "An unexpected error occurred."
+                                                                                            "See below for details.")),
                                         QtCore.Q_ARG(int, QtWidgets.QMessageBox.Critical),
                                         QtCore.Q_ARG(list, [exc_type, exc_obj, exc_tb]))
     else:
@@ -38,7 +41,6 @@ sys.excepthook = handle_uncaught_exception
 
 
 class DownloadWindow(QtWidgets.QMainWindow):
-
     MODE_EXTRACT = 0
     MODE_CONVERT = 1
 
@@ -101,20 +103,20 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("yt-dl")
 
     def create_toolbar(self):
-        exit_action = QtWidgets.QAction("&Exit", self)
+        exit_action = QtWidgets.QAction(self.tr("&Exit"), self)
         exit_action.setShortcut(QtCore.Qt.ControlModifier | QtCore.Qt.Key_Q)
         exit_action.triggered.connect(QtWidgets.qApp.quit)
 
-        update_action = QtWidgets.QAction("&Check for updates", self)
+        update_action = QtWidgets.QAction(self.tr("&Check for updates"), self)
         update_action.triggered.connect(self.update_dialog)
 
-        about_action = QtWidgets.QAction("&About", self)
+        about_action = QtWidgets.QAction(self.tr("&About"), self)
         about_action.triggered.connect(self.about_dialog)
 
         menu_bar = self.menuBar()
-        actions_menu = menu_bar.addMenu("&Actions")
+        actions_menu = menu_bar.addMenu(self.tr("&Actions"))
         actions_menu.addAction(exit_action)
-        help_menu = menu_bar.addMenu("&?")
+        help_menu = menu_bar.addMenu(self.tr("&?"))
         help_menu.addAction(update_action)
         help_menu.addAction(about_action)
         return menu_bar
@@ -128,7 +130,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         about_dlg.exec()
 
     def create_url_box(self):
-        url_box = QtWidgets.QGroupBox("1. Enter URL")
+        url_box = QtWidgets.QGroupBox(self.tr("1. Enter URL"))
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
@@ -136,9 +138,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox3 = QtWidgets.QHBoxLayout()
 
         url_box.url_ledit = LineEdit()
-        url_box.url_ledit.setPlaceholderText("URL of a YouTube video or playlist")
+        url_box.url_ledit.setPlaceholderText(self.tr("URL of a YouTube video or playlist"))
         url_box.url_ledit.returnPressed.connect(lambda: self.get_videos_from_url(url_box.url_ledit.text()))
-        url_box.get_videos_btn = QtWidgets.QPushButton("Find videos...")
+        url_box.get_videos_btn = QtWidgets.QPushButton(self.tr("Find videos..."))
         url_box.get_videos_btn.setDefault(True)
         url_box.get_videos_btn.clicked.connect(lambda: self.get_videos_from_url(url_box.url_ledit.text()))
         url_box.loading_indicator = QtWidgets.QLabel()
@@ -165,14 +167,14 @@ class DownloadWindow(QtWidgets.QMainWindow):
         return url_box
 
     def create_settings_box(self):
-        settings_box = QtWidgets.QGroupBox("2. Select quality and format")
+        settings_box = QtWidgets.QGroupBox(self.tr("2. Select quality and format"))
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
         hbox2 = QtWidgets.QHBoxLayout()
         hbox3 = QtWidgets.QHBoxLayout()
 
-        settings_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
+        settings_box.continue_msg = QtWidgets.QLabel(self.tr("Click \"Find videos...\" to continue."))
         settings_box.format_dropdown = QtWidgets.QComboBox()
         settings_box.format_dropdown.activated[str].connect(self.on_format_changed)
         settings_box.format_dropdown.hide()
@@ -197,7 +199,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.settings_box.resolution_dropdown.addItem(YouTube.prettify(i))
 
     def create_save_box(self):
-        save_box = QtWidgets.QGroupBox("3. Download videos")
+        save_box = QtWidgets.QGroupBox(self.tr("3. Download videos"))
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
@@ -205,16 +207,17 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox3 = QtWidgets.QHBoxLayout()
         hbox4 = QtWidgets.QHBoxLayout()
 
-        save_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
+        save_box.continue_msg = QtWidgets.QLabel(self.tr("Click \"Find videos...\" to continue."))
         save_box.destination_lbl = ElidedLabel()
-        save_box.destination_lbl.setText("Click \"...\" to specify download destination.")
+        save_box.destination_lbl.setElideMode(QtCore.Qt.ElideNone)
+        save_box.destination_lbl.setText(self.tr("Click \"...\" to specify download destination."))
         save_box.destination_lbl.hide()
         save_box.fdialog_btn = QtWidgets.QPushButton()
         # TODO: nice folder icon instead of ugly dots
-        save_box.fdialog_btn.setText("...")
+        save_box.fdialog_btn.setText(self.tr("..."))
         save_box.fdialog_btn.clicked.connect(self.choose_download_directory)
         save_box.fdialog_btn.hide()
-        save_box.download_btn = QtWidgets.QPushButton("DOWNLOAD")
+        save_box.download_btn = QtWidgets.QPushButton(self.tr("DOWNLOAD"))
         save_box.download_btn.setDisabled(True)
         save_box.download_btn.clicked.connect(self.on_download_clicked)
         save_box.download_btn.hide()
@@ -241,19 +244,20 @@ class DownloadWindow(QtWidgets.QMainWindow):
         return save_box
 
     def choose_download_directory(self):
-        dst_folder = QtWidgets.QFileDialog.getExistingDirectory(self, "Choose download directory", os.getcwd())
+        dst_folder = QtWidgets.QFileDialog.getExistingDirectory(self, self.tr("Choose download directory"), os.getcwd())
         if dst_folder:
             self.destination = dst_folder
+            self.save_box.destination_lbl.setElideMode(QtCore.Qt.ElideMiddle)
             self.save_box.destination_lbl.setText(self.destination)
             self.save_box.download_btn.setEnabled(True)
 
     def update_progress(self, bytes_downloaded, stream_fsize, videos_downloaded, videos_total):
         self.save_box.progress_bar.setMaximum(stream_fsize)
-        self.save_box.progress_bar.setFormat("%s of %s MB" %
+        self.save_box.progress_bar.setFormat(self.tr("%s of %s MB") %
                                              (round(self.save_box.progress_bar.value() / 1000000, 1),
                                               round(self.save_box.progress_bar.maximum() / 1000000, 1)))
         self.save_box.progress_bar.setValue(bytes_downloaded)
-        self.save_box.progress_lbl.setText("(%s/%s)" % (videos_downloaded, videos_total))
+        self.save_box.progress_lbl.setText(self.tr("(%s/%s)") % (videos_downloaded, videos_total))
 
     def toggle_progress_pulse(self, should_pulse):
         if should_pulse:
@@ -267,12 +271,17 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         if videos_total - successful_downloads == 0:
             if videos_total == 1:
-                show_msgbox("Information", "Video downloaded successfully!", QtWidgets.QMessageBox.Information)
+                show_msgbox(self.tr("Info"),
+                            self.tr("Video downloaded successfully!"),
+                            QtWidgets.QMessageBox.Information)
             else:
-                show_msgbox("Information", "All videos downloaded successfully!", QtWidgets.QMessageBox.Information)
+                show_msgbox(self.tr("Info"),
+                            self.tr("All videos downloaded successfully!"),
+                            QtWidgets.QMessageBox.Information)
         else:
-            show_msgbox("Information", "%s of %s videos downloaded successfully!"
-                        % (successful_downloads, videos_total), QtWidgets.QMessageBox.Information)
+            show_msgbox(self.tr("Info"),
+                        self.tr("%s of %s videos downloaded successfully!") % (successful_downloads, videos_total),
+                        QtWidgets.QMessageBox.Information)
 
     def on_download_clicked(self):
         extension = YouTube.uglify(self.settings_box.format_dropdown.currentText())
@@ -335,7 +344,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     thread.start()
 
     def create_convert_box(self):
-        convert_box = QtWidgets.QGroupBox("4. Post-processing")
+        convert_box = QtWidgets.QGroupBox(self.tr("4. Post-processing"))
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
@@ -345,17 +354,17 @@ class DownloadWindow(QtWidgets.QMainWindow):
         # hbox5 = QtWidgets.QHBoxLayout()
         # hbox6 = QtWidgets.QHBoxLayout()
 
-        convert_box.continue_msg = QtWidgets.QLabel("Click \"Find videos...\" to continue.")
+        convert_box.continue_msg = QtWidgets.QLabel(self.tr("Click \"Find videos...\" to continue."))
 
         convert_box.extract_rbtn = QtWidgets.QRadioButton()
         convert_box.extract_rbtn.setDisabled(True)
-        convert_box.extract_rbtn.setText("Extract audio only")
+        convert_box.extract_rbtn.setText(self.tr("Extract audio only"))
         convert_box.extract_rbtn.clicked.connect(self.on_audio_mode_switched)
         convert_box.extract_rbtn.hide()
 
         convert_box.convert_rbtn = QtWidgets.QRadioButton()
         convert_box.convert_rbtn.setDisabled(True)
-        convert_box.convert_rbtn.setText("Convert audio")
+        convert_box.convert_rbtn.setText(self.tr("Convert audio"))
         convert_box.convert_rbtn.clicked.connect(self.on_audio_mode_switched)
         convert_box.convert_rbtn.hide()
 
@@ -367,10 +376,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
         convert_box.extract_status = QtWidgets.QLabel()
         convert_box.extract_status.hide()
 
-        convert_box.msg = QtWidgets.QLabel("nothing here so far :/")
+        convert_box.msg = QtWidgets.QComboBox()
         convert_box.msg.hide()
 
-        convert_box.convert_btn = QtWidgets.QPushButton("CONVERT")
+        convert_box.convert_btn = QtWidgets.QPushButton(self.tr("CONVERT"))
         convert_box.convert_btn.clicked.connect(self.on_convert_clicked)
         convert_box.convert_btn.setDisabled(True)
         convert_box.convert_btn.hide()
@@ -400,19 +409,19 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def on_audio_mode_switched(self):
         if self.convert_box.extract_rbtn.isChecked() and Downloader.last_downloaded:
             self.postprocess_mode = self.MODE_EXTRACT
-            self.convert_box.convert_btn.setText("EXTRACT")
+            self.convert_box.convert_btn.setText(self.tr("EXTRACT"))
             self.convert_box.loading_indicator.setMovie(self.convert_box.spinning_wheel)
             self.convert_box.loading_indicator.show()
 
             self.convert_box.extract_status.show()
-            self.convert_box.extract_status.setText("Detecting audio format...")
+            self.convert_box.extract_status.setText(self.tr("Detecting audio format..."))
             self.convert_box.spinning_wheel.start()
 
             self.detect_audio_format()
             self.convert_box.convert_btn.setEnabled(True)
         elif self.convert_box.convert_rbtn.isChecked() and Downloader.last_downloaded:
             self.postprocess_mode = self.MODE_CONVERT
-            self.convert_box.convert_btn.setText("CONVERT")
+            self.convert_box.convert_btn.setText(self.tr("CONVERT"))
             self.convert_box.convert_btn.setEnabled(True)
 
     def detect_audio_format(self):
@@ -445,7 +454,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     def display_formats(self):
         unique_codecs = set(codec for codec in self.audio_codecs.values())
-        description = "Audio format: " if not len(unique_codecs) > 1 else "Audio formats: "
+        description = self.tr("Audio format: ") if not len(unique_codecs) > 1 else self.tr("Audio formats: ")
         self.convert_box.extract_status.setText(description + ", ".join(unique_codecs).upper())
 
     def on_convert_clicked(self):
@@ -456,7 +465,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 converter.extract_audio(codec)
             print("Finished (more or less) successfully.")
         elif self.audio_codecs and self.postprocess_mode == self.MODE_CONVERT:
-            show_msgbox("Sorry", "This feature is not supported yet.", QtWidgets.QMessageBox.Warning)
+            show_msgbox(self.tr("Sorry"), self.tr("This feature is not supported yet."), QtWidgets.QMessageBox.Warning)
 
     def get_videos_from_url(self, page_url=None):
         self.url_box.get_videos_btn.setDisabled(True)
@@ -570,9 +579,25 @@ def startup():
         os.remove(logfile)
     app = QtWidgets.QApplication(sys.argv)
     # TODO: this is ugly and stupid af -> add option to change this
-    if sys.platform == "win32":
-        app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
-    setup_palette(QtGui.QColor(255, 0, 0), ("QProgressBar",))
+    # if sys.platform == "win32":
+    #     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
+    # setup_palette(QtGui.QColor(255, 0, 0), ("QProgressBar",))  # looks ugly (turns blue again when inactive etc.)
+
+    locale = QtCore.QLocale.system().name()
+    tr_list = []
+
+    qt_tr = QtCore.QTranslator()
+    qt_tr.load("qtbase_" + locale, QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.TranslationsPath))
+    tr_list.append(qt_tr)
+
+    ytdl_tr = QtCore.QTranslator()
+    ytdl_tr.load(":/lang_" + locale)
+    tr_list.append(ytdl_tr)
+
+    for tr in tr_list:
+        if tr:
+            app.installTranslator(tr)
+
     window = DownloadWindow()
     app.exec()
 

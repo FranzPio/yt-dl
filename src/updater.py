@@ -30,40 +30,42 @@ class Update(QtCore.QObject):
         current_datetime = datetime.now().strftime("%Y%m%d_%H%M")
         self.zip_fname = "yt-dl_update_" + current_datetime + ".zip"
 
-        self.status_update.emit("1 / 5\nFetching the latest version from Github...")
+        self.status_update.emit(self.tr("1 / 5\nFetching the latest version from Github..."))
         urllib.request.urlretrieve(self.url, self.zip_fname)
 
-        self.status_update.emit("2 / 5\nExtracting ZIP archive...")
+        self.status_update.emit(self.tr("2 / 5\nExtracting ZIP archive..."))
         self.dst_folder = self.zip_fname.split(".")[0]
         self.extract_zipball(self.zip_fname, self.dst_folder)
 
-        self.status_update.emit("3 / 5\nVerifying files...")
+        self.status_update.emit(self.tr("3 / 5\nVerifying files..."))
         self.new_files = self.query_files(self.dst_folder)
 
-        if self.check_update_need():
-            if not IS_FROZEN:
-                self.status_update.emit("4 / 5\nCopying new files...")
+        if not IS_FROZEN:
+            if self.check_update_need():
+                self.status_update.emit(self.tr("4 / 5\nCopying new files..."))
                 self.copy_files(self.new_files, APP_PATH)
 
-                self.status_update.emit("5 / 5\nCleaning up...")
+                self.status_update.emit(self.tr("5 / 5\nCleaning up..."))
                 self.cleanup()
 
-                self.information.emit("Info", "Updated successfully! (" + self.old_version + " -> " + self.new_version
-                                      + ")\nThe application will restart now for the update to take effect.",
+                self.information.emit(self.tr("Info"),
+                                      self.tr("Updated successfully! (%s -> %s)\n"
+                                              "The application will restart now for the update to take effect.")
+                                      % (self.old_version, self.new_version),
                                       QtWidgets.QMessageBox.Information)
                 time.sleep(4)
                 self.success.emit()
             else:
-                self.status_update.emit("5 / 5\nCleaning up...")
+                self.status_update.emit(self.tr("5 / 5\nCleaning up..."))
                 self.cleanup()
 
-                self.information.emit("Info", "Updating is not yet supported for Windows executables.",
+                self.information.emit(self.tr("Info"), self.tr("There's no update available at the time!"),
                                       QtWidgets.QMessageBox.Information)
         else:
-            self.status_update.emit("5 / 5\nCleaning up...")
+            self.status_update.emit(self.tr("5 / 5\nCleaning up..."))
             self.cleanup()
 
-            self.information.emit("Info", "There's no update available at the time!",
+            self.information.emit(self.tr("Info"), self.tr("Updating is not yet supported for Windows executables."),
                                   QtWidgets.QMessageBox.Information)
 
         self.finished.emit()
@@ -105,7 +107,7 @@ class Update(QtCore.QObject):
                 shutil.copy2(file, dst)
         except OSError:
             # no write permissions or some other weird OS-thingy
-            self.error.emit("Error", "Apparently you don't have write permissions for \"" + dst + "\".",
+            self.error.emit(self.tr("Error"), self.tr("Apparently you don't have write permissions for \"%s\".") % dst,
                             QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
 
     def cleanup(self):

@@ -22,7 +22,7 @@ class YouTube(QtCore.QObject):
 
     formats = collections.OrderedDict([("mp4", "MPEG-4 AVC / H.264 (.mp4)"),
                                        ("webm", "VP9 (.webm)"),
-                                       ("3gpp", "MPEG-4 Visual (.3gpp)"),
+                                       ("3gpp", "MPEG-4 Visual (.3gp)"),
                                        ("flv", "Sorenson H.263 (.flv)")])
 
     standard_formats = collections.OrderedDict([("mp4", ["360p", "720p"]),
@@ -44,7 +44,7 @@ class YouTube(QtCore.QObject):
     def find_videos(self):
         try:
             if not self.page_url:
-                self.error.emit("Error", "No URL given. Enter a URL to continue.",
+                self.error.emit(self.tr("Error"), self.tr("No URL given. Enter a URL to continue."),
                                 QtWidgets.QMessageBox.Warning, (), True)
             else:
                 yt = pytube.YouTube(self.page_url)
@@ -59,14 +59,14 @@ class YouTube(QtCore.QObject):
                 # this could be an invalid url OR we're maybe dealing with a playlist
                 self.find_playlist("https://" + self.page_url)
             except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
-                self.error.emit("Error", "Invalid url: no videos could be found. Check url for typos.",
+                self.error.emit(self.tr("Error"), self.tr("Invalid url: no videos could be found. Check url for typos."),
                                 QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
 
         except pytube.exceptions.RegexMatchError:
             # this could be an invalid url OR we're maybe dealing with a playlist
             self.find_playlist(self.page_url)
         except pytube.exceptions.PytubeError:
-            self.error.emit("Error", "An error occurred. Couldn't get video(s). Try another url.",
+            self.error.emit(self.tr("Error"), self.tr("An error occurred. Couldn't get video(s). Try another url."),
                             QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         finally:
             self.finished.emit()
@@ -79,7 +79,8 @@ class YouTube(QtCore.QObject):
             "a", attrs={"class": "pl-video-title-link yt-uix-tile-link yt-uix-sessionlink spf-link "})
 
         if not playlist_html:
-            self.error.emit("Error", "This is not a playlist (or shitty youtube have changed their html again).",
+            self.error.emit(self.tr("Error"),
+                            self.tr("This is not a playlist (or shitty youtube have changed their html again)."),
                             QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         else:
             videos = []
