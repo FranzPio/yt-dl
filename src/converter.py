@@ -53,7 +53,7 @@ class FFmpeg(QtCore.QObject):
                 self.audio_codec, self.file_ext = self._detect_audio_codec()
             except (FFprobeNotFoundError, FFprobeError) as error:
                 print(error, "\n", sys.exc_info())
-                self.error.emit("Error", str(error), QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+                self.error.emit(self.tr("Error"), str(error), QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
                 return
         else:
             self.audio_codec = audio_codec
@@ -82,13 +82,13 @@ class FFmpeg(QtCore.QObject):
             else:
                 raise FFprobeError(stderr)
         else:
-            raise FFprobeNotFoundError("Couldn't find ffprobe. Make sure it's installed and in your PATH.")
+            raise FFprobeNotFoundError(self.tr("Couldn't find ffprobe. Make sure it's installed and in your PATH."))
 
     def get_audio_codec(self):
         try:
             audio_codec, file_ext = self._detect_audio_codec()
         except (FFprobeNotFoundError, FFprobeError) as error:
-            self.error.emit("Error", str(error), QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+            self.error.emit(self.tr("Error"), str(error), QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
         else:
             self.detection_success.emit(self.path, audio_codec)
         finally:

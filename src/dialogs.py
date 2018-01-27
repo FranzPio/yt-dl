@@ -6,7 +6,6 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from config import VERSION, ICONS8_URL, LOADINGIO_URL, GITHUB_URL, ZIP_URL, EXE
 from updater import Update
 
-
 LICENSE = None
 
 
@@ -41,7 +40,7 @@ def show_license(parent=None):
     global LICENSE
     dlg = QtWidgets.QDialog(parent)
     dlg.resize(600, 600)
-    dlg.setWindowTitle("License")
+    dlg.setWindowTitle(QtCore.QCoreApplication.translate("show_license", "License"))
 
     vbox = QtWidgets.QVBoxLayout()
     hbox1 = QtWidgets.QHBoxLayout()
@@ -57,15 +56,17 @@ def show_license(parent=None):
             LICENSE = QtCore.QTextStream(lfile).readAll()
             lfile.close()
         except (FileNotFoundError, OSError):
-            LICENSE = "LICENSE file couldn't be found/accessed.\nyt-dl used to be under the GNU GPL v3.\n" \
-                      "Please update the application or visit https://github.com/FranzPio/yt-dl for more information."
-
+            LICENSE = QtCore.QCoreApplication.translate("show_license",
+                                                        "LICENSE file couldn't be found/accessed.\nyt-dl used to be "
+                                                        "under the GNU GPL v3.\n "
+                                                        "Please update the application or visit "
+                                                        "https://github.com/FranzPio/yt-dl for more information.")
     txt_edit.insertPlainText(LICENSE)
     text_cursor = txt_edit.textCursor()
     text_cursor.movePosition(QtGui.QTextCursor.Start)
     txt_edit.setTextCursor(text_cursor)
 
-    close_btn = QtWidgets.QPushButton("&Close")
+    close_btn = QtWidgets.QPushButton(QtCore.QCoreApplication.translate("show_license", "&Close"))
     close_btn.clicked.connect(dlg.close)
 
     hbox1.addWidget(txt_edit)
@@ -87,7 +88,7 @@ class AboutDialog(QtWidgets.QDialog):
     def init_ui(self):
         self.resize(420, 360)
         self.setFixedSize(420, 360)
-        self.setWindowTitle("About")
+        self.setWindowTitle(self.tr("About"))
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
         hbox2 = QtWidgets.QHBoxLayout()
@@ -123,11 +124,14 @@ class AboutDialog(QtWidgets.QDialog):
         hbox4.addWidget(self.copyright_lbl)
         hbox4.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.desc_lbl = QtWidgets.QLabel("An easy-to-use YouTube downloader (GUI),<br>"
-                                         "created with PyQt5, pytube and beautifulsoup4.<br>"
-                                         "Icons: <a href=\"" + ICONS8_URL + "\">" + ICONS8_URL + "</a><br>"
-                                         "Loading GIF: <a href=\"" + LOADINGIO_URL + "\">" + LOADINGIO_URL + "</a><br>"
-                                         "Github page: <a href=\"" + GITHUB_URL + "\">" + GITHUB_URL + "</a>")
+        self.desc_lbl = QtWidgets.QLabel(self.tr("An easy-to-use YouTube downloader (GUI),<br>"
+                                                 "created with PyQt5, pytube and beautifulsoup4.<br>")
+                                         + self.tr("Icons: ")
+                                         + "<a href=\"" + ICONS8_URL + "\">" + ICONS8_URL + "</a><br>"
+                                         + self.tr("Loading GIF: ")
+                                         + "<a href=\"" + LOADINGIO_URL + "\">" + LOADINGIO_URL + "</a><br>"
+                                         + self.tr("Github page: ")
+                                         + "<a href=\"" + GITHUB_URL + "\">" + GITHUB_URL + "</a>")
         self.desc_lbl.setTextFormat(QtCore.Qt.RichText)
         self.desc_lbl.setOpenExternalLinks(True)
         self.desc_lbl.setAlignment(QtCore.Qt.AlignCenter)
@@ -135,13 +139,13 @@ class AboutDialog(QtWidgets.QDialog):
         hbox5.addWidget(self.desc_lbl)
         hbox5.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.license_btn = QtWidgets.QPushButton("&License")
+        self.license_btn = QtWidgets.QPushButton(self.tr("&License"))
         self.license_btn.clicked.connect(lambda: show_license(self))
 
-        self.about_qt_btn = QtWidgets.QPushButton("&About Qt")
-        self.about_qt_btn.clicked.connect(lambda: QtWidgets.QMessageBox.aboutQt(self, "About Qt"))
+        self.about_qt_btn = QtWidgets.QPushButton(self.tr("&About Qt"))
+        self.about_qt_btn.clicked.connect(lambda: QtWidgets.QMessageBox.aboutQt(self, self.tr("About Qt")))
 
-        self.close_btn = QtWidgets.QPushButton("&Close")
+        self.close_btn = QtWidgets.QPushButton(self.tr("&Close"))
         self.close_btn.clicked.connect(self.close)
         self.close_btn.setDefault(True)
 
