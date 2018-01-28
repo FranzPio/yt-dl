@@ -42,46 +42,42 @@ class YouTube(QtCore.QObject):
         self.page_url = page_url
 
     def find_videos(self):
-        try:
-            if not self.page_url:
-                self.error.emit(self.tr("Error"), self.tr("No URL given. Enter a URL to continue."),
-                                QtWidgets.QMessageBox.Warning, (), True)
-            else:
+        if not self.page_url:
+            self.error.emit(self.tr("Error"), self.tr("No URL given. Enter a URL to continue."),
+                            QtWidgets.QMessageBox.Warning, (), True)
+        else:
+            try:
                 yt = pytube.YouTube(self.page_url)
                 self.success.emit()
                 self.video_found.emit(yt)
-        except (ValueError, AttributeError, urllib.error.URLError):
-            try:
-                yt = pytube.YouTube("https://" + self.page_url)
-                self.success.emit()
-                self.video_found.emit(yt)
+            except (ValueError, urllib.error.URLError):
+                self.error.emit(self.tr("Error"),
+                                self.tr("Invalid url: no videos could be found. Check url for typos."),
+                                QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
             except pytube.exceptions.RegexMatchError:
                 # this could be an invalid url OR we're maybe dealing with a playlist
-                self.find_playlist("https://" + self.page_url)
-            except (ValueError, AttributeError, urllib.error.URLError, pytube.exceptions.PytubeError):
-                self.error.emit(self.tr("Error"), self.tr("Invalid url: no videos could be found. Check url for typos."),
-                                QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+                try:
+                    self.find_playlist(self.page_url)
+                except (ValueError, urllib.error.URLError):
+                    self.error.emit(self.tr("Error"),
+                                    self.tr("Invalid url: no videos could be found. Check url for typos."),
+                                    QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
 
-        except pytube.exceptions.RegexMatchError:
-            # this could be an invalid url OR we're maybe dealing with a playlist
-            self.find_playlist(self.page_url)
-        except pytube.exceptions.PytubeError:
-            self.error.emit(self.tr("Error"), self.tr("An error occurred. Couldn't get video(s). Try another url."),
-                            QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
-        finally:
-            self.finished.emit()
+            except pytube.exceptions.PytubeError:
+                self.error.emit(self.tr("Error"), self.tr("An error occurred. Couldn't get video(s). Try another url."),
+                                QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+            finally:
+                self.finished.emit()
 
     def find_playlist(self, url):
-        page_html = urllib.request.urlopen(url).read()
-        page_soup = bs4.BeautifulSoup(page_html, "html.parser")
-
-        playlist_html = page_soup.find_all(
-            "a", attrs={"class": "pl-video-title-link yt-uix-tile-link yt-uix-sessionlink spf-link "})
+        video_url_attrs = {"class": "pl-video-title-link yt-uix-tile-link yt-uix-sessionlink spf-link "}
+        try:
+            playlist_html = self.crawl_page(url, "a", video_url_attrs)
+        except ValueError:
+            playlist_html = self.crawl_page("https://" + url, "a", video_url_attrs)
 
         if not playlist_html:
-            self.error.emit(self.tr("Error"),
-                            self.tr("This is not a playlist (or shitty youtube have changed their html again)."),
-                            QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
+            raise ValueError("This is either an invalid URL or YouTube have changed their playlist html again...")
         else:
             videos = []
             for a in playlist_html:
@@ -89,6 +85,15 @@ class YouTube(QtCore.QObject):
 
             self.success.emit()
             self.playlist_found.emit(videos)
+
+    @staticmethod
+    def crawl_page(url, name, attrs=None, recursive=True, text=None, limit=None, parser=None):
+        if attrs is None:
+            attrs = {}
+        page_html = urllib.request.urlopen(url, timeout=4).read()
+        page_soup = bs4.BeautifulSoup(page_html, "html.parser")
+
+        return page_soup.find_all(name, attrs, recursive, text, limit)
 
     @staticmethod
     def prettify(video_format):
