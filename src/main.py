@@ -66,6 +66,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     def show_window(self):
         self.show()
+        self.raise_()
         self.splashie.finish(self)
 
     def create_thread(self, WorkerClass, *args, **kwargs):
@@ -98,7 +99,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.widget)
 
         self.setMinimumSize(395, 400)
-        self.move(QtWidgets.qApp.desktop().screen().rect().center() - self.rect().center())
+        self.setGeometry(QtWidgets.QStyle.alignedRect(QtCore.Qt.LeftToRight,
+                                                      QtCore.Qt.AlignCenter,
+                                                      self.minimumSize(),
+                                                      QtWidgets.qApp.desktop().availableGeometry()))
         self.setWindowIcon(QtGui.QIcon(":/youtube_icon.ico"))
         self.setWindowTitle("yt-dl")
 
