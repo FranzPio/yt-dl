@@ -34,6 +34,9 @@ class FFmpeg(QtCore.QObject):
     detection_success = QtCore.pyqtSignal(str, str)
     error = QtCore.pyqtSignal(str, str, int, tuple, bool)
 
+    ENCODE_VBR = "-qscale:a"
+    ENCODE_CBR = "-b:a"
+
     def __init__(self, path):
         super().__init__()
         self.path = os.path.normpath(path)
@@ -44,8 +47,22 @@ class FFmpeg(QtCore.QObject):
         self.audio_codec = None
         self.file_ext = None
 
-    def convert_audio(self):
-        pass
+    def convert_audio(self, file_ext, compression_method, quality):
+        if self.ffmpeg:
+            process = subprocess.Popen([self.ffmpeg,
+                                        "-y",  # overwrite possibly existing files without asking
+                                        "-i", self.path,
+                                        compression_method, str(quality),  # VBR/CBR | value/bitrate
+                                        ".".join(self.path.split(".")[:-1]) + file_ext],
+                                       stderr=subprocess.PIPE, universal_newlines=True)
+                                       # ffmpeg outputs info to stderr | needed because of its \r chars
+            for line in process.stderr:
+                print(line)
+                # parsing to happen here (calculate progress, ETA based on file size / frame number / length ???)
+        else:
+            self.error.emit(self.tr("Error"),
+                            self.tr("Couldn't find ffmpeg. Make sure it's installed and in your PATH."),
+                            QtWidgets.QMessageBox.Warning, (), False)
 
     def extract_audio(self, audio_codec=None):
         if audio_codec is not None:
@@ -59,14 +76,19 @@ class FFmpeg(QtCore.QObject):
             self.audio_codec = audio_codec
             self.file_ext = self.codecs.get(audio_codec)
 
-        subprocess.run([self.ffmpeg,
-                        "-i", self.path,
-                        "-vn",
-                        "-acodec", "copy",
-                        self.path.split(".")[0] + self.file_ext])
+        if self.ffmpeg:
+            subprocess.run([self.ffmpeg,
+                            "-y",
+                            "-i", self.path,
+                            "-vn",
+                            "-codec:a", "copy",
+                            ".".join(self.path.split(".")[:-1]) + self.file_ext])
+        else:
+            self.error.emit(self.tr("Error"),
+                            self.tr("Couldn't find ffmpeg. Make sure it's installed and in your PATH."),
+                            QtWidgets.QMessageBox.Warning, (), False)
 
     def _detect_audio_codec(self):
-        # TODO: testing (stdout decoding seems ewwww...)
         if self.ffprobe:
             process = subprocess.Popen([self.ffprobe,
                                         "-v", "error",
@@ -76,7 +98,7 @@ class FFmpeg(QtCore.QObject):
                                         self.path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = process.communicate()
             if stdout:
-                audio_codec = stdout.decode("utf-8").strip()  # does that work on Windows?! (stdout encoding different?)
+                audio_codec = stdout.decode("utf-8").strip()
                 file_ext = self.codecs.get(audio_codec)
                 return audio_codec, file_ext
             else:

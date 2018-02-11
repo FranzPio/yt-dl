@@ -380,8 +380,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         convert_box.extract_status = QtWidgets.QLabel()
         convert_box.extract_status.hide()
 
-        convert_box.msg = QtWidgets.QComboBox()
-        convert_box.msg.hide()
+        convert_box.audio_formats = QtWidgets.QComboBox()
+        convert_box.audio_formats.hide()
 
         convert_box.convert_btn = QtWidgets.QPushButton(self.tr("CONVERT"))
         convert_box.convert_btn.clicked.connect(self.on_convert_clicked)
@@ -400,7 +400,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox3.addSpacing(5)
         hbox3.addWidget(convert_box.extract_status, 1)
         hbox3.addStretch(1)
-        hbox3.addWidget(convert_box.msg)
+        hbox3.addWidget(convert_box.audio_formats)
         vbox.addLayout(hbox3)
         vbox.addSpacing(5)
         hbox4.addWidget(convert_box.convert_btn)
@@ -582,7 +582,9 @@ def startup():
     if os.path.isfile(logfile):
         os.remove(logfile)
     app = QtWidgets.QApplication(sys.argv)
-    # TODO: this is ugly and stupid af -> add option to change this
+    # app.setAttribute(QtCore.Qt.AA_DisableWindowContextHelpButton)  # only works with Qt >=5.10
+
+    # TODO: add option to change style in menu bar
     # if sys.platform == "win32":
     #     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
     # setup_palette(QtGui.QColor(255, 0, 0), ("QProgressBar",))  # looks ugly (turns blue again when inactive etc.)
