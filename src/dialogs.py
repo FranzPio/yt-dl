@@ -24,7 +24,7 @@ def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, details=None, is_
 
 def show_splash(parent=None, opacity=0.95, vfont_size=11, vfont_bold=True):
     pixmap = QtGui.QPixmap(":/youtube_splash_screen.png")
-    splashie = QtWidgets.QSplashScreen(parent if parent else None, pixmap)
+    splashie = QtWidgets.QSplashScreen(parent if parent else None, pixmap, QtCore.Qt.WindowStaysOnTopHint)
     big_font = splashie.font()
     big_font.setPointSize(vfont_size)
     big_font.setBold(vfont_bold)
