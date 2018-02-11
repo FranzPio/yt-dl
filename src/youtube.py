@@ -45,6 +45,7 @@ class YouTube(QtCore.QObject):
         if not self.page_url:
             self.error.emit(self.tr("Error"), self.tr("No URL given. Enter a URL to continue."),
                             QtWidgets.QMessageBox.Warning, (), True)
+            self.finished.emit()
         else:
             try:
                 yt = pytube.YouTube(self.page_url)
@@ -52,7 +53,8 @@ class YouTube(QtCore.QObject):
                 self.video_found.emit(yt)
             except (ValueError, urllib.error.URLError):
                 self.error.emit(self.tr("Error"),
-                                self.tr("Invalid url: no videos could be found. Check url for typos."),
+                                self.tr("Invalid URL: no videos found. Check URL for typos.\n"
+                                        "Invalid proxy / firewall / network settings can cause this error as well."),
                                 QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
             except pytube.exceptions.RegexMatchError:
                 # this could be an invalid url OR we're maybe dealing with a playlist
@@ -60,11 +62,12 @@ class YouTube(QtCore.QObject):
                     self.find_playlist(self.page_url)
                 except (ValueError, urllib.error.URLError):
                     self.error.emit(self.tr("Error"),
-                                    self.tr("Invalid url: no videos could be found. Check url for typos."),
+                                    self.tr("Invalid URL: no videos found. Check URL for typos.\n"
+                                            "Invalid proxy / firewall / network settings can cause this error as well."),
                                     QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
 
             except pytube.exceptions.PytubeError:
-                self.error.emit(self.tr("Error"), self.tr("An error occurred. Couldn't get video(s). Try another url."),
+                self.error.emit(self.tr("Error"), self.tr("An error occurred. Could not get video(s). Try another URL."),
                                 QtWidgets.QMessageBox.Warning, sys.exc_info(), True)
             finally:
                 self.finished.emit()
