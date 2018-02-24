@@ -35,7 +35,18 @@ class FFmpeg(QtCore.QObject):
     error = QtCore.pyqtSignal(str, str, int, tuple, bool)
 
     ENCODE_VBR = "-qscale:a"
+    #  option | avg. bitrate  ||  option | avg. bitrate
+    #  =====================  ||  =====================
+    #    9    |    65 kbps    ||    4    |   165 kbps
+    #    8    |    85 kbps    ||    3    |   175 kbps
+    #    7    |   100 kbps    ||    2    |   195 kbps
+    #    6    |   115 kbps    ||    1    |   225 kbps
+    #    5    |   130 kbps    ||    0    |   245 kbps
+
     ENCODE_CBR = "-b:a"
+    # bitrate in kbps, followed by a "k"
+
+    default_quality = {ENCODE_VBR: "4", ENCODE_CBR: "160k"}
 
     def __init__(self, path):
         super().__init__()
@@ -47,18 +58,27 @@ class FFmpeg(QtCore.QObject):
         self.audio_codec = None
         self.file_ext = None
 
-    def convert_audio(self, file_ext, compression_method, quality):
+    def convert_audio(self, file_ext, compress_method=ENCODE_VBR, quality=None):
         if self.ffmpeg:
+            if quality is None:
+                quality = self.default_quality[compress_method]
+                print(quality)
             process = subprocess.Popen([self.ffmpeg,
                                         "-y",  # overwrite possibly existing files without asking
                                         "-i", self.path,
-                                        compression_method, str(quality),  # VBR/CBR | value/bitrate
+                                        compress_method, str(quality),
                                         ".".join(self.path.split(".")[:-1]) + file_ext],
                                        stderr=subprocess.PIPE, universal_newlines=True)
-                                       # ffmpeg outputs info to stderr | needed because of its \r chars
             for line in process.stderr:
-                print(line)
+                print(line.strip())
                 # parsing to happen here (calculate progress, ETA based on file size / frame number / length ???)
+                #
+                # ffmpeg output:
+                # --------------
+                # size=    8960kB time=00:12:09.49 bitrate= 100.6kbits/s speed=13.4x
+                # -> current size -> elapsed time  -> current bitrate    -> speed of encoding (1x = real-time ???)
+                #    of converted
+                #    file
         else:
             self.error.emit(self.tr("Error"),
                             self.tr("Couldn't find ffmpeg. Make sure it's installed and in your PATH."),
