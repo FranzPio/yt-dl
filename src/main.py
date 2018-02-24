@@ -469,6 +469,14 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 converter.extract_audio(codec)
             print("Finished (more or less) successfully.")
         elif self.audio_codecs and self.postprocess_mode == self.MODE_CONVERT:
+            # path_list = []
+            # for stream in Downloader.last_downloaded:
+            #     path_list.append(os.path.join(self.destination, stream.default_filename))
+            # for index, path in enumerate(path_list):
+            #     print("Converting", index, "of", len(path_list), "...")
+            #     converter = FFmpeg(path)
+            #     converter.convert_audio(".mp3", converter.ENCODE_VBR)
+            # print("Finished (more or less) successfully.")
             show_msgbox(self.tr("Sorry"), self.tr("This feature is not supported yet."), QtWidgets.QMessageBox.Warning)
 
     def get_videos_from_url(self, page_url=None):
@@ -581,9 +589,15 @@ def startup():
     logfile = os.path.join(APP_PATH, "yt-dl.log")
     if os.path.isfile(logfile):
         os.remove(logfile)
-    app = QtWidgets.QApplication(sys.argv)
-    # app.setAttribute(QtCore.Qt.AA_DisableWindowContextHelpButton)  # only works with Qt >=5.10
 
+    # QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_DisableWindowContextHelpButton)  # only works with Qt >=5.10
+    app = QtWidgets.QApplication(sys.argv)
+
+    # if sys.platform == "win32":          # (temporary?) workaround for small fonts on HiDPI
+    #     font = QtGui.QFont("Segoe UI")   # -> window sizes will have to be adjusted
+    #     font.setPointSize(9)             # -> could cause problems with Chinese, Japanese,...
+    #     app.setFont(font)                # -> requires testing
+    
     # TODO: add option to change style in menu bar
     # if sys.platform == "win32":
     #     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
