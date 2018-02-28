@@ -1,7 +1,7 @@
 import os.path
 import sys
 
-VERSION = "0.13"
+VERSION = "0.13.1"
 IS_FROZEN = hasattr(sys, "frozen")
 
 if IS_FROZEN:
