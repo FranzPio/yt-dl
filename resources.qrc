@@ -4,6 +4,8 @@
     <file alias="youtube_icon_red.png">resources/youtube_icon_red.png</file>
     <file alias="youtube_splash_screen.png">resources/youtube_splash_screen.png</file>
     <file alias="rolling.gif">resources/rolling.gif</file>
+    <file alias="FiraSans-Regular.ttf">resources/FiraSans-Regular.ttf</file>
+    <file alias="FiraSans-Bold.ttf">resources/FiraSans-Bold.ttf</file>
     <file alias="LICENSE">LICENSE</file>
     <file alias="lang_de.qm">resources/lang_de.qm</file>
 </qresource>
