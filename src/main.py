@@ -11,7 +11,7 @@ from config import APP_PATH
 from converter import FFmpeg
 from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
 from download import Downloader
-from utils import LineEdit, ElidedLabel
+from utils import LineEdit, ElidedLabel, FusionDarkPalette
 from youtube import YouTube
 import resources
 
@@ -43,6 +43,10 @@ sys.excepthook = handle_uncaught_exception
 class DownloadWindow(QtWidgets.QMainWindow):
     MODE_EXTRACT = 0
     MODE_CONVERT = 1
+
+    STYLE_DEFAULT = 0
+    STYLE_FUSION = 1
+    STYLE_FUSION_DARK = 2
 
     def __init__(self):
         super().__init__()
@@ -98,7 +102,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.widget.setLayout(big_vbox)
         self.setCentralWidget(self.widget)
 
-        self.setMinimumSize(395, 400)
+        self.setMinimumSize(self.sizeHint())
         self.setGeometry(QtWidgets.QStyle.alignedRect(QtCore.Qt.LeftToRight,
                                                       QtCore.Qt.AlignCenter,
                                                       self.minimumSize(),
@@ -107,22 +111,43 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("yt-dl")
 
     def create_toolbar(self):
-        exit_action = QtWidgets.QAction(self.tr("&Exit"), self)
-        exit_action.setShortcut(QtCore.Qt.ControlModifier | QtCore.Qt.Key_Q)
-        exit_action.triggered.connect(QtWidgets.qApp.quit)
+        exit_act = QtWidgets.QAction(self.tr("&Exit"), self)
+        exit_act.setShortcut(QtCore.Qt.ControlModifier | QtCore.Qt.Key_Q)
+        exit_act.triggered.connect(QtWidgets.qApp.quit)
 
-        update_action = QtWidgets.QAction(self.tr("&Check for updates"), self)
-        update_action.triggered.connect(self.update_dialog)
+        update_act = QtWidgets.QAction(self.tr("&Check for updates"), self)
+        update_act.triggered.connect(self.update_dialog)
 
-        about_action = QtWidgets.QAction(self.tr("&About"), self)
-        about_action.triggered.connect(self.about_dialog)
+        about_act = QtWidgets.QAction(self.tr("&About"), self)
+        about_act.triggered.connect(self.about_dialog)
+
+        style_group = QtWidgets.QActionGroup(self)
+        default_style_act = QtWidgets.QAction(self.tr("&Default"), self)
+        default_style_act.triggered.connect(functools.partial(self.change_style, self.STYLE_DEFAULT))
+        default_style_act.setCheckable(True)
+        default_style_act.setChecked(True)
+        style_group.addAction(default_style_act)
+
+        fusion_style_act = QtWidgets.QAction(self.tr("&Fusion"), self)
+        fusion_style_act.triggered.connect(functools.partial(self.change_style, self.STYLE_FUSION))
+        fusion_style_act.setCheckable(True)
+        style_group.addAction(fusion_style_act)
+
+        dark_style_act = QtWidgets.QAction(self.tr("Fusion (d&ark theme)"), self)
+        dark_style_act.triggered.connect(functools.partial(self.change_style, self.STYLE_FUSION_DARK))
+        dark_style_act.setCheckable(True)
+        style_group.addAction(dark_style_act)
 
         menu_bar = self.menuBar()
         actions_menu = menu_bar.addMenu(self.tr("&Actions"))
-        actions_menu.addAction(exit_action)
+        actions_menu.addAction(exit_act)
+        options_menu = menu_bar.addMenu(self.tr("&Options"))
+        options_menu.addAction(default_style_act)
+        options_menu.addAction(fusion_style_act)
+        options_menu.addAction(dark_style_act)
         help_menu = menu_bar.addMenu(self.tr("&?"))
-        help_menu.addAction(update_action)
-        help_menu.addAction(about_action)
+        help_menu.addAction(update_act)
+        help_menu.addAction(about_act)
         return menu_bar
 
     def update_dialog(self):
@@ -132,6 +157,48 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def about_dialog(self):
         about_dlg = AboutDialog(self)
         about_dlg.exec()
+
+    def change_style(self, new_style):
+        current_style = QtWidgets.qApp.style().objectName()
+
+        if new_style != current_style:
+            if new_style == self.STYLE_DEFAULT:
+                # TODO: maybe remove default style in future (at least on Windows)
+                QtWidgets.qApp.setStyleSheet("")
+
+                default_style = QtWidgets.QStyleFactory.create(QtWidgets.QStyleFactory.keys()[0])
+                QtWidgets.qApp.setStyle(default_style)
+
+                QtWidgets.qApp.setPalette(default_style.standardPalette())
+
+                if sys.platform == "win32":
+                    font = QtGui.QFont("Segoe UI", 9)
+                else:
+                    font = QtGui.QFont()
+                    font.setFamily(font.defaultFamily())
+
+                QtWidgets.qApp.setFont(font)
+
+            elif new_style == self.STYLE_FUSION or new_style == self.STYLE_FUSION_DARK:
+                QtWidgets.qApp.setStyleSheet("")
+
+                fusion_style = QtWidgets.QStyleFactory.create("fusion")
+                QtWidgets.qApp.setStyle(fusion_style)
+
+                font = QtGui.QFont("Fira Sans", 9)
+                QtWidgets.qApp.setFont(font)
+
+                if new_style == self.STYLE_FUSION_DARK and not current_style == self.STYLE_FUSION_DARK:
+                    dark_style = FusionDarkPalette(QtWidgets.qApp)
+                    dark_style.apply()
+                else:
+                    palette = fusion_style.standardPalette()
+                    palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(0, 120, 215))
+                    palette.setColor(QtGui.QPalette.Inactive, QtGui.QPalette.Highlight, QtGui.QColor(240, 240, 240))
+                    QtWidgets.qApp.setPalette(palette)
+
+            self.setMinimumSize(self.sizeHint())
+            self.resize(self.sizeHint())
 
     def create_url_box(self):
         url_box = QtWidgets.QGroupBox(self.tr("1. Enter URL"))
@@ -574,16 +641,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.convert_box.convert_btn.show()
 
 
-def setup_palette(color, widget_list=None, color_role=QtGui.QPalette.Highlight):
-    palette = QtGui.QPalette()
-    palette.setColor(QtGui.QPalette.Active, color_role, color)
-    if widget_list:
-        for widget in widget_list:
-            QtWidgets.qApp.setPalette(palette, widget)
-    else:
-        QtWidgets.qApp.setPalette(palette)
-
-
 def startup():
     global window
     logfile = os.path.join(APP_PATH, "yt-dl.log")
@@ -593,15 +650,12 @@ def startup():
     # QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_DisableWindowContextHelpButton)  # only works with Qt >=5.10
     app = QtWidgets.QApplication(sys.argv)
 
-    # if sys.platform == "win32":          # (temporary?) workaround for small fonts on HiDPI
-    #     font = QtGui.QFont("Segoe UI")   # -> window sizes will have to be adjusted
-    #     font.setPointSize(9)             # -> could cause problems with Chinese, Japanese,...
-    #     app.setFont(font)                # -> requires testing
-    
-    # TODO: add option to change style in menu bar
-    # if sys.platform == "win32":
-    #     app.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
-    # setup_palette(QtGui.QColor(255, 0, 0), ("QProgressBar",))  # looks ugly (turns blue again when inactive etc.)
+    if sys.platform == "win32":
+        font = QtGui.QFont("Segoe UI", 9)
+        app.setFont(font)
+
+    QtGui.QFontDatabase.addApplicationFont(":/FiraSans-Regular.ttf")
+    QtGui.QFontDatabase.addApplicationFont(":/FiraSans-Bold.ttf")
 
     locale = QtCore.QLocale.system().name()
     tr_list = []

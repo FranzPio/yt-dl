@@ -86,8 +86,8 @@ class AboutDialog(QtWidgets.QDialog):
         self.init_ui()
 
     def init_ui(self):
-        self.resize(420, 360)
-        self.setFixedSize(420, 360)
+        self.resize(self.sizeHint())
+        self.setFixedSize(self.sizeHint())
         self.setWindowTitle(self.tr("About"))
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()

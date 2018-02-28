@@ -1,6 +1,63 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
 
 
+def setup_palette(color, widget_list=None, color_role=QtGui.QPalette.Highlight):
+    palette = QtGui.QPalette()
+    palette.setColor(QtGui.QPalette.Active, color_role, color)
+    if widget_list:
+        for widget in widget_list:
+            QtWidgets.qApp.setPalette(palette, widget)
+    else:
+        QtWidgets.qApp.setPalette(palette)
+
+
+class FusionDarkPalette(QtGui.QPalette):
+    # adapted from https://stackoverflow.com/a/45634644
+
+    WHITE = QtGui.QColor(255, 255, 255)
+    BLUE = QtGui.QColor(42, 130, 218)
+    RED = QtGui.QColor(180, 0, 0)
+
+    LIGHTER_GRAY = QtGui.QColor(127, 127, 127)
+    LIGHT_GRAY = QtGui.QColor(80, 80, 80)
+    MEDIUM_GRAY = QtGui.QColor(66, 66, 66)
+    GRAY = QtGui.QColor(53, 53, 53)
+    DARK_GRAY = QtGui.QColor(42, 42, 42)
+    DARKER_GRAY = QtGui.QColor(35, 35, 35)
+    ULTRA_DARK_GRAY = QtGui.QColor(20, 20, 20)
+
+    def __init__(self, QApplication, *args):
+        super().__init__(*args)
+
+        self.app = QApplication
+
+        self.setColor(QtGui.QPalette.Window,                                   self.GRAY)
+        self.setColor(QtGui.QPalette.WindowText,                               self.WHITE)
+        self.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.WindowText,      self.LIGHTER_GRAY)
+        self.setColor(QtGui.QPalette.Base,                                     self.DARK_GRAY)
+        self.setColor(QtGui.QPalette.AlternateBase,                            self.MEDIUM_GRAY)
+        self.setColor(QtGui.QPalette.ToolTipBase,                              self.WHITE)
+        self.setColor(QtGui.QPalette.ToolTipText,                              self.WHITE)
+        self.setColor(QtGui.QPalette.Text,                                     self.WHITE)
+        self.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text,            self.LIGHTER_GRAY)
+        self.setColor(QtGui.QPalette.Dark,                                     self.DARKER_GRAY)
+        self.setColor(QtGui.QPalette.Shadow,                                   self.ULTRA_DARK_GRAY)
+        self.setColor(QtGui.QPalette.Button,                                   self.GRAY)
+        self.setColor(QtGui.QPalette.ButtonText,                               self.WHITE)
+        self.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText,      self.LIGHTER_GRAY)
+        self.setColor(QtGui.QPalette.BrightText,                               self.RED)
+        self.setColor(QtGui.QPalette.Link,                                     self.BLUE)
+        self.setColor(QtGui.QPalette.Highlight,                                self.BLUE)
+        self.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Highlight,       self.LIGHT_GRAY)
+        self.setColor(QtGui.QPalette.Inactive, QtGui.QPalette.Highlight,       self.LIGHT_GRAY)
+        self.setColor(QtGui.QPalette.HighlightedText,                          self.WHITE)
+        self.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.HighlightedText, self.LIGHTER_GRAY)
+
+    def apply(self):
+        self.app.setPalette(self)
+        self.app.setStyleSheet("QToolTip { color: #ffffff; background-color: #232323;  border: 1px solid white; }")
+
+
 class LineEdit(QtWidgets.QLineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
