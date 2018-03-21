@@ -566,8 +566,12 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def on_delete_file_toggled(self):
         if self.sender().isChecked():
             self.OPT_DELETE_FILE = True
+            self.postprocess_box.extract_box.del_after_chkbox.setChecked(True)
+            self.postprocess_box.convert_box.del_after_chkbox.setChecked(True)
         else:
             self.OPT_DELETE_FILE = False
+            self.postprocess_box.extract_box.del_after_chkbox.setChecked(False)
+            self.postprocess_box.convert_box.del_after_chkbox.setChecked(False)
 
     def detect_audio_format(self):
         path_list = []
