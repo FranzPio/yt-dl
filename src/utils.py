@@ -96,7 +96,8 @@ class ElidedLabel(QtWidgets.QLabel):
             size = QtCore.QSize(fm.width("..."), fm.height())
             return size
         else:
-            return QtWidgets.QLabel.minimumSizeHint(self)
+            size = QtWidgets.QLabel.minimumSizeHint(self)
+            return QtCore.QSize(size.width() + 13, size.height())
 
     # adapted from https://www.mimec.org/blog/status-bar-and-elided-label
     def paintEvent(self, QPaintEvent):
