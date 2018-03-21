@@ -224,7 +224,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
         url_box.loading_indicator = QtWidgets.QLabel()
         url_box.spinning_wheel = QtGui.QMovie(":/rolling.gif")
         url_box.spinning_wheel.setScaledSize(QtCore.QSize(26, 26))
-        # url_box.loading_indicator.setMovie(url_box.spinning_wheel)
         url_box.videos_list_widget = QtWidgets.QListWidget()
         url_box.videos_list_widget.hide()
 
