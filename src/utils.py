@@ -92,6 +92,10 @@ class ElidedLabel(QtWidgets.QLabel):
     # adapted from https://forum.qt.io/topic/24530/solved-shortening-a-label/3
     def minimumSizeHint(self):
         if self.elide_mode != QtCore.Qt.ElideNone:
+            # TODO: tweak sizeHint
+            # -> text should expand if user increases window size,
+            #    but don't automatically adapt window size to label width on UI update!
+            #    (somehow calculate minimumSizeHint + sizeHint with font metrics???)
             fm = self.fontMetrics()
             size = QtCore.QSize(fm.width("..."), fm.height())
             return size
