@@ -17,6 +17,7 @@ class FusionDarkPalette(QtGui.QPalette):
     WHITE = QtGui.QColor(255, 255, 255)
     BLUE = QtGui.QColor(42, 130, 218)
     RED = QtGui.QColor(180, 0, 0)
+    # YT_RED = QtGui.QColor(255, 0, 0)
 
     LIGHTER_GRAY = QtGui.QColor(127, 127, 127)
     LIGHT_GRAY = QtGui.QColor(80, 80, 80)
@@ -48,6 +49,7 @@ class FusionDarkPalette(QtGui.QPalette):
         self.setColor(QtGui.QPalette.BrightText,                               self.RED)
         self.setColor(QtGui.QPalette.Link,                                     self.BLUE)
         self.setColor(QtGui.QPalette.Highlight,                                self.BLUE)
+        # self.setColor(QtGui.QPalette.Highlight,                                self.YT_RED)
         self.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Highlight,       self.LIGHT_GRAY)
         self.setColor(QtGui.QPalette.Inactive, QtGui.QPalette.Highlight,       self.LIGHT_GRAY)
         self.setColor(QtGui.QPalette.HighlightedText,                          self.WHITE)
@@ -86,6 +88,15 @@ class ElidedLabel(QtWidgets.QLabel):
 
     def setElideMode(self, elide_mode):
         self.elide_mode = elide_mode
+
+    # adapted from https://forum.qt.io/topic/24530/solved-shortening-a-label/3
+    def minimumSizeHint(self):
+        if self.elide_mode != QtCore.Qt.ElideNone:
+            fm = self.fontMetrics()
+            size = QtCore.QSize(fm.width("..."), fm.height())
+            return size
+        else:
+            return QtWidgets.QLabel.minimumSizeHint(self)
 
     # adapted from https://www.mimec.org/blog/status-bar-and-elided-label
     def paintEvent(self, QPaintEvent):

@@ -25,7 +25,7 @@ class FFprobeNotFoundError(FFprobeError):
 
 # TODO: set ID3 tags from title / video thumbnail as cover
 class FFmpeg(QtCore.QObject):
-    codecs = collections.OrderedDict([("aac", ".aac"),
+    codecs = collections.OrderedDict([("aac", ".m4a"),
                                       ("vorbis", ".ogg"),
                                       ("opus", ".opus"),
                                       ("mp3", ".mp3")])

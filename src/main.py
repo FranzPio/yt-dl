@@ -44,6 +44,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
     MODE_EXTRACT = 0
     MODE_CONVERT = 1
 
+    OPT_DELETE_FILE = False
+
     STYLE_DEFAULT = 0
     STYLE_FUSION = 1
     STYLE_FUSION_DARK = 2
@@ -87,7 +89,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.url_box = self.create_url_box()
         self.settings_box = self.create_settings_box()
         self.save_box = self.create_save_box()
-        self.convert_box = self.create_convert_box()
+        self.postprocess_box = self.create_postprocess_box()
 
         big_vbox = QtWidgets.QVBoxLayout()
         big_vbox.addWidget(self.url_box)
@@ -96,7 +98,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         big_vbox.addSpacing(15)
         big_vbox.addWidget(self.save_box)
         big_vbox.addSpacing(15)
-        big_vbox.addWidget(self.convert_box)
+        big_vbox.addWidget(self.postprocess_box)
 
         self.widget = QtWidgets.QWidget()
         self.widget.setLayout(big_vbox)
@@ -107,6 +109,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                                                       QtCore.Qt.AlignCenter,
                                                       self.minimumSize(),
                                                       QtWidgets.qApp.desktop().availableGeometry()))
+        self.move(self.pos().x(), self.pos().y() - 120)
         self.setWindowIcon(QtGui.QIcon(":/youtube_icon.ico"))
         self.setWindowTitle("yt-dl")
 
@@ -166,14 +169,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 # TODO: maybe remove default style in future (at least on Windows)
                 QtWidgets.qApp.setStyleSheet("")
 
-                if sys.platform == "win32":
-                    default_style = QtWidgets.QStyleFactory.create("windowsvista")  # stupid workaround needed :/
-                else:
-                    default_style = QtWidgets.QStyleFactory.create(QtWidgets.QStyleFactory.keys()[0])
-
-                QtWidgets.qApp.setStyle(default_style)
-
-                QtWidgets.qApp.setPalette(default_style.standardPalette())
+                former_style = QtWidgets.QStyleFactory.create(default_style)
+                QtWidgets.qApp.setStyle(former_style)
+                QtWidgets.qApp.setPalette(former_style.standardPalette())
 
                 if sys.platform == "win32":
                     font = QtGui.QFont("Segoe UI", 9)
@@ -183,7 +181,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
                 QtWidgets.qApp.setFont(font)
 
-            elif new_style == self.STYLE_FUSION or new_style == self.STYLE_FUSION_DARK:
+            elif new_style in (self.STYLE_FUSION, self.STYLE_FUSION_DARK):
                 # TODO: change background in palette of Fusion style
                 #       (brownish background color in Qt 5.9 = ugly, but 5.10 not working with PyInstaller yet)
                 #                                                    -> ugly windowsxp style, windowsvista not bundled
@@ -291,6 +289,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         save_box.destination_lbl = ElidedLabel()
         save_box.destination_lbl.setElideMode(QtCore.Qt.ElideNone)
         save_box.destination_lbl.setText(self.tr("Click \"...\" to specify download destination."))
+        save_box.destination_lbl.setMaximumSize(save_box.destination_lbl.minimumSizeHint())
+
         save_box.destination_lbl.hide()
         save_box.fdialog_btn = QtWidgets.QPushButton()
         # TODO: nice folder icon instead of ugly dots
@@ -308,9 +308,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         hbox1.addWidget(save_box.continue_msg)
         vbox.addLayout(hbox1)
-        hbox2.addWidget(save_box.destination_lbl)
+        hbox2.addWidget(save_box.destination_lbl, 10)
         hbox2.addSpacing(5)
-        hbox2.addWidget(save_box.fdialog_btn)
+        hbox2.addWidget(save_box.fdialog_btn, 1)
         vbox.addLayout(hbox2)
         hbox3.addWidget(save_box.download_btn)
         vbox.addLayout(hbox3)
@@ -324,7 +324,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         return save_box
 
     def choose_download_directory(self):
-        dst_folder = QtWidgets.QFileDialog.getExistingDirectory(self, self.tr("Choose download directory"), os.getcwd())
+        dst_folder = QtWidgets.QFileDialog.getExistingDirectory(self, self.tr("Choose download directory"),
+                                                                self.destination)
         if dst_folder:
             self.destination = dst_folder
             self.save_box.destination_lbl.setElideMode(QtCore.Qt.ElideMiddle)
@@ -346,8 +347,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.save_box.progress_bar.setRange(0, 1)
 
     def on_download_success(self, successful_downloads, videos_total):
-        self.convert_box.extract_rbtn.setEnabled(True)
-        self.convert_box.convert_rbtn.setEnabled(True)
+        self.postprocess_box.extract_rbtn.setEnabled(True)
+        self.postprocess_box.convert_rbtn.setEnabled(True)
 
         if videos_total - successful_downloads == 0:
             if videos_total == 1:
@@ -376,17 +377,20 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.save_box.progress_lbl.clear()
 
             self.audio_codecs.clear()
-            self.convert_box.extract_rbtn.setAutoExclusive(False)
-            self.convert_box.convert_rbtn.setAutoExclusive(False)
-            self.convert_box.extract_rbtn.setChecked(False)
-            self.convert_box.convert_rbtn.setChecked(False)
-            self.convert_box.extract_rbtn.setAutoExclusive(True)
-            self.convert_box.convert_rbtn.setAutoExclusive(True)
+            self.postprocess_box.extract_rbtn.setAutoExclusive(False)
+            self.postprocess_box.convert_rbtn.setAutoExclusive(False)
+            self.postprocess_box.extract_rbtn.setChecked(False)
+            self.postprocess_box.convert_rbtn.setChecked(False)
+            self.postprocess_box.extract_rbtn.setAutoExclusive(True)
+            self.postprocess_box.convert_rbtn.setAutoExclusive(True)
 
-            self.convert_box.extract_status.hide()
-            self.convert_box.extract_rbtn.setDisabled(True)
-            self.convert_box.convert_rbtn.setDisabled(True)
-            self.convert_box.convert_btn.setDisabled(True)
+            self.postprocess_box.extract_box.status.hide()
+            self.postprocess_box.extract_rbtn.setDisabled(True)
+            self.postprocess_box.convert_rbtn.setDisabled(True)
+            self.postprocess_box.convert_btn.setDisabled(True)
+
+            self.postprocess_box.extract_box.hide()
+            self.postprocess_box.convert_box.hide()
 
             if len(self.url_box.videos_list_widget) == 1:
                 if self.url_box.videos_list_widget.item(0).checkState() == QtCore.Qt.Checked:
@@ -423,86 +427,147 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
                     thread.start()
 
-    def create_convert_box(self):
-        convert_box = QtWidgets.QGroupBox(self.tr("4. Post-processing"))
+    def create_postprocess_box(self):
+        def create_extract_box():
+            extract_box = QtWidgets.QGroupBox(self.tr("Optionen"))
+
+            vbox = QtWidgets.QVBoxLayout()
+            hbox1 = QtWidgets.QHBoxLayout()
+            hbox2 = QtWidgets.QHBoxLayout()
+
+            extract_box.loading_indicator = QtWidgets.QLabel()
+            extract_box.loading_indicator.hide()
+            extract_box.spinning_wheel = QtGui.QMovie(":/rolling.gif")
+            extract_box.spinning_wheel.setScaledSize(QtCore.QSize(22, 22))
+
+            extract_box.status = QtWidgets.QLabel()
+            extract_box.status.hide()
+
+            extract_box.del_after_chkbox = QtWidgets.QCheckBox()
+            extract_box.del_after_chkbox.setChecked(False)
+            extract_box.del_after_chkbox.setText(self.tr("Delete original video file"))
+            extract_box.del_after_chkbox.clicked.connect(self.on_delete_file_toggled)
+            extract_box.del_after_chkbox.hide()
+
+            hbox1.addWidget(extract_box.loading_indicator)
+            hbox1.addSpacing(5)
+            hbox1.addWidget(extract_box.status, 1)
+            vbox.addLayout(hbox1)
+            hbox2.addWidget(extract_box.del_after_chkbox)
+            vbox.addLayout(hbox2)
+
+            extract_box.setLayout(vbox)
+
+            return extract_box
+
+        def create_convert_box():
+            convert_box = QtWidgets.QGroupBox(self.tr("Optionen"))
+
+            vbox = QtWidgets.QVBoxLayout()
+            hbox1 = QtWidgets.QHBoxLayout()
+            hbox2 = QtWidgets.QHBoxLayout()
+
+            convert_box.audio_formats = QtWidgets.QComboBox()
+            convert_box.audio_formats.hide()
+
+            convert_box.del_after_chkbox = QtWidgets.QCheckBox()
+            convert_box.del_after_chkbox.setChecked(False)
+            convert_box.del_after_chkbox.setText(self.tr("Delete original video file"))
+            convert_box.del_after_chkbox.clicked.connect(self.on_delete_file_toggled)
+
+            hbox1.addWidget(convert_box.audio_formats)
+            vbox.addLayout(hbox1)
+            hbox2.addWidget(convert_box.del_after_chkbox)
+            vbox.addLayout(hbox2)
+
+            convert_box.setLayout(vbox)
+
+            return convert_box
+
+        postprocess_box = QtWidgets.QGroupBox(self.tr("4. Post-processing"))
 
         vbox = QtWidgets.QVBoxLayout()
         hbox1 = QtWidgets.QHBoxLayout()
         hbox2 = QtWidgets.QHBoxLayout()
         hbox3 = QtWidgets.QHBoxLayout()
         hbox4 = QtWidgets.QHBoxLayout()
-        # hbox5 = QtWidgets.QHBoxLayout()
-        # hbox6 = QtWidgets.QHBoxLayout()
 
-        convert_box.continue_msg = QtWidgets.QLabel(self.tr("Click \"Find videos...\" to continue."))
+        postprocess_box.continue_msg = QtWidgets.QLabel(self.tr("Click \"Find videos...\" to continue."))
 
-        convert_box.extract_rbtn = QtWidgets.QRadioButton()
-        convert_box.extract_rbtn.setDisabled(True)
-        convert_box.extract_rbtn.setText(self.tr("Extract audio only"))
-        convert_box.extract_rbtn.clicked.connect(self.on_audio_mode_switched)
-        convert_box.extract_rbtn.hide()
+        postprocess_box.extract_rbtn = QtWidgets.QRadioButton()
+        postprocess_box.extract_rbtn.setDisabled(True)
+        postprocess_box.extract_rbtn.setText(self.tr("Extract audio only"))
+        postprocess_box.extract_rbtn.clicked.connect(self.on_audio_mode_switched)
+        postprocess_box.extract_rbtn.hide()
 
-        convert_box.convert_rbtn = QtWidgets.QRadioButton()
-        convert_box.convert_rbtn.setDisabled(True)
-        convert_box.convert_rbtn.setText(self.tr("Convert audio"))
-        convert_box.convert_rbtn.clicked.connect(self.on_audio_mode_switched)
-        convert_box.convert_rbtn.hide()
+        postprocess_box.convert_rbtn = QtWidgets.QRadioButton()
+        postprocess_box.convert_rbtn.setDisabled(True)
+        postprocess_box.convert_rbtn.setText(self.tr("Convert audio"))
+        postprocess_box.convert_rbtn.clicked.connect(self.on_audio_mode_switched)
+        postprocess_box.convert_rbtn.hide()
 
-        convert_box.loading_indicator = QtWidgets.QLabel()
-        convert_box.loading_indicator.hide()
-        convert_box.spinning_wheel = QtGui.QMovie(":/rolling.gif")
-        convert_box.spinning_wheel.setScaledSize(QtCore.QSize(22, 22))
+        postprocess_box.extract_box = create_extract_box()
+        postprocess_box.extract_box.hide()
+        postprocess_box.convert_box = create_convert_box()
+        postprocess_box.convert_box.hide()
 
-        convert_box.extract_status = QtWidgets.QLabel()
-        convert_box.extract_status.hide()
+        postprocess_box.convert_btn = QtWidgets.QPushButton(self.tr("CONVERT"))
+        postprocess_box.convert_btn.clicked.connect(self.on_convert_clicked)
+        postprocess_box.convert_btn.setDisabled(True)
+        postprocess_box.convert_btn.hide()
 
-        convert_box.audio_formats = QtWidgets.QComboBox()
-        convert_box.audio_formats.hide()
-
-        convert_box.convert_btn = QtWidgets.QPushButton(self.tr("CONVERT"))
-        convert_box.convert_btn.clicked.connect(self.on_convert_clicked)
-        convert_box.convert_btn.setDisabled(True)
-        convert_box.convert_btn.hide()
-
-        hbox1.addWidget(convert_box.continue_msg)
+        hbox1.addWidget(postprocess_box.extract_rbtn)
+        spacer = QtWidgets.QSpacerItem(50, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        hbox1.addSpacerItem(spacer)
+        hbox1.addWidget(postprocess_box.convert_rbtn)
         vbox.addLayout(hbox1)
-        hbox2.addWidget(convert_box.extract_rbtn)
-        hbox2.addStretch(1)
-        hbox2.addWidget(convert_box.convert_rbtn)
-        hbox2.addStretch(1)
+        hbox2.addWidget(postprocess_box.continue_msg)
         vbox.addLayout(hbox2)
-        hbox3.addSpacing(20)
-        hbox3.addWidget(convert_box.loading_indicator)
-        hbox3.addSpacing(5)
-        hbox3.addWidget(convert_box.extract_status, 1)
-        hbox3.addStretch(1)
-        hbox3.addWidget(convert_box.audio_formats)
+        hbox3.addWidget(postprocess_box.extract_box)
+        hbox3.addWidget(postprocess_box.convert_box)
         vbox.addLayout(hbox3)
-        vbox.addSpacing(5)
-        hbox4.addWidget(convert_box.convert_btn)
+        hbox4.addWidget(postprocess_box.convert_btn)
         vbox.addLayout(hbox4)
 
-        convert_box.setLayout(vbox)
+        postprocess_box.setLayout(vbox)
 
-        return convert_box
+        return postprocess_box
 
     def on_audio_mode_switched(self):
-        if self.convert_box.extract_rbtn.isChecked() and Downloader.last_downloaded:
+        if self.postprocess_box.extract_rbtn.isChecked() and Downloader.last_downloaded:
             self.postprocess_mode = self.MODE_EXTRACT
-            self.convert_box.convert_btn.setText(self.tr("EXTRACT"))
-            self.convert_box.loading_indicator.setMovie(self.convert_box.spinning_wheel)
-            self.convert_box.loading_indicator.show()
+            self.postprocess_box.convert_box.hide()
+            self.postprocess_box.extract_box.show()
 
-            self.convert_box.extract_status.show()
-            self.convert_box.extract_status.setText(self.tr("Detecting audio format..."))
-            self.convert_box.spinning_wheel.start()
+            self.postprocess_box.convert_btn.setText(self.tr("EXTRACT"))
+            self.postprocess_box.extract_box.loading_indicator.setMovie(self.postprocess_box.extract_box.spinning_wheel)
+            self.postprocess_box.extract_box.loading_indicator.show()
+
+            self.postprocess_box.extract_box.status.show()
+            self.postprocess_box.extract_box.status.setText(self.tr("Detecting audio format..."))
+            self.postprocess_box.extract_box.spinning_wheel.start()
+
+            self.setMinimumSize(self.sizeHint())
+            self.resize(self.sizeHint())
 
             self.detect_audio_format()
-            self.convert_box.convert_btn.setEnabled(True)
-        elif self.convert_box.convert_rbtn.isChecked() and Downloader.last_downloaded:
+            self.postprocess_box.convert_btn.setEnabled(True)
+        elif self.postprocess_box.convert_rbtn.isChecked() and Downloader.last_downloaded:
             self.postprocess_mode = self.MODE_CONVERT
-            self.convert_box.convert_btn.setText(self.tr("CONVERT"))
-            self.convert_box.convert_btn.setEnabled(True)
+            self.postprocess_box.extract_box.hide()
+            self.postprocess_box.convert_box.show()
+
+            self.setMinimumSize(self.sizeHint())
+            self.resize(self.sizeHint())
+
+            self.postprocess_box.convert_btn.setText(self.tr("CONVERT"))
+            self.postprocess_box.convert_btn.setEnabled(True)
+
+    def on_delete_file_toggled(self):
+        if self.sender().isChecked():
+            self.OPT_DELETE_FILE = True
+        else:
+            self.OPT_DELETE_FILE = False
 
     def detect_audio_format(self):
         path_list = []
@@ -529,13 +594,14 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def format_detection_success(self, path, codec):
         # print("Codec:", codec, "[", path, "]")
         self.audio_codecs[path] = codec
-        self.convert_box.spinning_wheel.stop()
-        self.convert_box.loading_indicator.hide()
+        self.postprocess_box.extract_box.spinning_wheel.stop()
+        self.postprocess_box.extract_box.loading_indicator.hide()
+        self.postprocess_box.extract_box.del_after_chkbox.show()
 
     def display_formats(self):
         unique_codecs = set(codec for codec in self.audio_codecs.values())
         description = self.tr("Audio format: ") if not len(unique_codecs) > 1 else self.tr("Audio formats: ")
-        self.convert_box.extract_status.setText(description + ", ".join(unique_codecs).upper())
+        self.postprocess_box.extract_box.status.setText(description + ", ".join(unique_codecs).upper())
 
     def on_convert_clicked(self):
         if self.audio_codecs and self.postprocess_mode == self.MODE_EXTRACT:
@@ -543,6 +609,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 print("Converting", index, "of", len(self.audio_codecs), "...")
                 converter = FFmpeg(path)
                 converter.extract_audio(codec)
+                if self.OPT_DELETE_FILE:
+                    os.remove(path)
             print("Finished (more or less) successfully.")
         elif self.audio_codecs and self.postprocess_mode == self.MODE_CONVERT:
             # path_list = []
@@ -629,7 +697,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.url_box.videos_list_widget.setEnabled(True)
         self.settings_box.format_dropdown.setEnabled(True)
         self.settings_box.resolution_dropdown.setEnabled(True)
-        self.resize(self.widget.sizeHint())
+
+        self.setMinimumSize(self.sizeHint())
+        self.resize(self.sizeHint())
         # self.threads_workers.clear()
 
     def on_success(self):
@@ -644,20 +714,22 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.save_box.destination_lbl.show()
         self.save_box.fdialog_btn.show()
         self.save_box.download_btn.show()
-        self.convert_box.continue_msg.hide()
-        self.convert_box.extract_rbtn.show()
-        self.convert_box.convert_rbtn.show()
-        self.convert_box.convert_btn.show()
+        self.postprocess_box.continue_msg.hide()
+        self.postprocess_box.extract_rbtn.show()
+        self.postprocess_box.convert_rbtn.show()
+        self.postprocess_box.convert_btn.show()
 
 
 def startup():
-    global window
+    global window, default_style
     logfile = os.path.join(APP_PATH, "yt-dl.log")
     if os.path.isfile(logfile):
         os.remove(logfile)
 
     # QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_DisableWindowContextHelpButton)  # only works with Qt >=5.10
     app = QtWidgets.QApplication(sys.argv)
+
+    default_style = app.style().objectName()
 
     if sys.platform == "win32":
         font = QtGui.QFont("Segoe UI", 9)
