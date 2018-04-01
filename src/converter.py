@@ -1,4 +1,5 @@
 import collections.abc
+import datetime
 import os
 import shutil
 import subprocess
@@ -34,7 +35,7 @@ class FFmpeg(QtCore.QObject):
     detection_success = QtCore.pyqtSignal(str, str)
     error = QtCore.pyqtSignal(str, str, int, tuple, bool)
 
-    ENCODE_VBR = "-qscale:a"
+    ENCODE_VBR = "-qscale:a"  # variable bitrate (VBR)
     #  option | avg. bitrate  ||  option | avg. bitrate
     #  =====================  ||  =====================
     #    9    |    65 kbps    ||    4    |   165 kbps
@@ -43,7 +44,7 @@ class FFmpeg(QtCore.QObject):
     #    6    |   115 kbps    ||    1    |   225 kbps
     #    5    |   130 kbps    ||    0    |   245 kbps
 
-    ENCODE_CBR = "-b:a"
+    ENCODE_CBR = "-b:a"  # constant bitrate (CBR)
     # bitrate in kbps, followed by a "k"
 
     default_quality = {ENCODE_VBR: "4", ENCODE_CBR: "160k"}
@@ -62,23 +63,22 @@ class FFmpeg(QtCore.QObject):
         if self.ffmpeg:
             if quality is None:
                 quality = self.default_quality[compress_method]
-                print(quality)
             process = subprocess.Popen([self.ffmpeg,
                                         "-y",  # overwrite possibly existing files without asking
                                         "-i", self.path,
                                         compress_method, str(quality),
                                         ".".join(self.path.split(".")[:-1]) + file_ext],
                                        stderr=subprocess.PIPE, universal_newlines=True)
+
             for line in process.stderr:
-                print(line.strip())
-                # parsing to happen here (calculate progress, ETA based on file size / frame number / length ???)
-                #
-                # ffmpeg output:
-                # --------------
-                # size=    8960kB time=00:12:09.49 bitrate= 100.6kbits/s speed=13.4x
-                # -> current size -> elapsed time  -> current bitrate    -> speed of encoding (1x = real-time ???)
-                #    of converted
-                #    file
+                if not line.startswith("size="):
+                    print(line)
+                    # debug output; to be removed later on
+                else:
+                    fsize, duration, bitrate, speed = self._parse_output(line)
+
+                    print(fsize, duration, bitrate, speed)
+                    # parsing to happen here (calculate progress, ETA based on file size / frame number / length ???)
         else:
             self.error.emit(self.tr("Error"),
                             self.tr("Couldn't find ffmpeg. Make sure it's installed and in your PATH."),
@@ -107,6 +107,24 @@ class FFmpeg(QtCore.QObject):
             self.error.emit(self.tr("Error"),
                             self.tr("Couldn't find ffmpeg. Make sure it's installed and in your PATH."),
                             QtWidgets.QMessageBox.Warning, (), False)
+
+    @staticmethod
+    def _parse_output(line):
+        parsed_line = line
+        for omit in (" ", "size", "time", "bitrate", "speed", "kB", "kbits/s", "x"):
+            parsed_line = parsed_line.replace(omit, "")
+
+        progress_list = parsed_line.strip("=\n").split("=")
+        fsize_str, duration_str, bitrate_str, speed_str = progress_list
+
+        fsize = int(fsize_str)
+        duration = datetime.timedelta(hours=int(duration_str.split(":")[0]),
+                                      minutes=int(duration_str.split(":")[1]),
+                                      seconds=float(duration_str.split(":")[2]))
+        bitrate = float(bitrate_str)
+        speed = float(speed_str)
+
+        return fsize, duration, bitrate, speed
 
     def _detect_audio_codec(self):
         if self.ffprobe:

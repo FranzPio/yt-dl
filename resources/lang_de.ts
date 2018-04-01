@@ -4,47 +4,47 @@
 <context>
     <name>AboutDialog</name>
     <message>
-        <location filename="../src/dialogs.py" line="91"/>
+        <location filename="../src/dialogs.py" line="167"/>
         <source>About</source>
         <translation>Über yt-dl</translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="127"/>
+        <location filename="../src/dialogs.py" line="124"/>
         <source>An easy-to-use YouTube downloader (GUI),&lt;br&gt;created with PyQt5, pytube and beautifulsoup4.&lt;br&gt;</source>
         <translation>Ein einfach bedienbarer YouTube-Downloader (GUI),&lt;br&gt;erstellt mit PyQt5, pytube und beautifulsoup4.&lt;br&gt;</translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="127"/>
+        <location filename="../src/dialogs.py" line="124"/>
         <source>Icons: </source>
         <translation>Symbole: </translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="127"/>
+        <location filename="../src/dialogs.py" line="124"/>
         <source>Loading GIF: </source>
         <translation>Lade-GIF: </translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="127"/>
+        <location filename="../src/dialogs.py" line="124"/>
         <source>Github page: </source>
         <translation>Github-Seite: </translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="142"/>
+        <location filename="../src/dialogs.py" line="139"/>
         <source>&amp;License</source>
         <translation>&amp;Lizenz</translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="145"/>
+        <location filename="../src/dialogs.py" line="142"/>
         <source>&amp;About Qt</source>
         <translation>&amp;Über Qt</translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="146"/>
+        <location filename="../src/dialogs.py" line="143"/>
         <source>About Qt</source>
         <translation>Über Qt</translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="148"/>
+        <location filename="../src/dialogs.py" line="145"/>
         <source>&amp;Close</source>
         <translation>&amp;Schließen</translation>
     </message>
@@ -52,179 +52,206 @@
 <context>
     <name>DownloadWindow</name>
     <message>
-        <location filename="../src/main.py" line="114"/>
+        <location filename="../src/main.py" line="117"/>
         <source>&amp;Exit</source>
         <translation>&amp;Schließen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="118"/>
+        <location filename="../src/main.py" line="121"/>
         <source>&amp;Check for updates</source>
         <translation>Nach &amp;Updates suchen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="121"/>
+        <location filename="../src/main.py" line="124"/>
         <source>&amp;About</source>
         <translation>&amp;Über yt-dl</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="142"/>
+        <location filename="../src/main.py" line="145"/>
         <source>&amp;Actions</source>
         <translation>&amp;Aktionen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="148"/>
+        <location filename="../src/main.py" line="151"/>
         <source>&amp;?</source>
         <translation>&amp;?</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="203"/>
+        <location filename="../src/main.py" line="211"/>
         <source>1. Enter URL</source>
         <translation>1. URL eingeben</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="211"/>
+        <location filename="../src/main.py" line="219"/>
         <source>URL of a YouTube video or playlist</source>
         <translation>URL von YouTube-Video oder Playlist</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="213"/>
+        <location filename="../src/main.py" line="221"/>
         <source>Find videos...</source>
         <translation>Videos suchen...</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="240"/>
+        <location filename="../src/main.py" line="247"/>
         <source>2. Select quality and format</source>
         <translation>2. Qualität und Format wählen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="427"/>
+        <location filename="../src/main.py" line="495"/>
         <source>Click &quot;Find videos...&quot; to continue.</source>
         <translation>Auf &quot;Videos suchen...&quot; klicken um fortzufahren.</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="272"/>
+        <location filename="../src/main.py" line="279"/>
         <source>3. Download videos</source>
         <translation>3. Videos downloaden</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="283"/>
+        <location filename="../src/main.py" line="290"/>
         <source>Click &quot;...&quot; to specify download destination.</source>
         <translation>Auf &quot;...&quot; klicken um Speicherort auszuwählen.</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="287"/>
+        <location filename="../src/main.py" line="296"/>
         <source>...</source>
         <translation>...</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="290"/>
+        <location filename="../src/main.py" line="299"/>
         <source>DOWNLOAD</source>
         <translation>DOWNLOAD</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="317"/>
+        <location filename="../src/main.py" line="327"/>
         <source>Choose download directory</source>
         <translation>Speicherort auswählen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="326"/>
+        <location filename="../src/main.py" line="337"/>
         <source>%s of %s MB</source>
         <translation>%s von %s MB</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="330"/>
+        <location filename="../src/main.py" line="341"/>
         <source>(%s/%s)</source>
         <translation>(%s/%s)</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="344"/>
+        <location filename="../src/main.py" line="355"/>
         <source>Video downloaded successfully!</source>
         <translation>Video erfolgreich heruntergeladen!</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="348"/>
+        <location filename="../src/main.py" line="359"/>
         <source>All videos downloaded successfully!</source>
         <translation>Alle Videos erfolgreich heruntergeladen!</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="352"/>
+        <location filename="../src/main.py" line="363"/>
         <source>%s of %s videos downloaded successfully!</source>
         <translation>%s von %s Videos erfolgreich heruntergeladen!</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="417"/>
+        <location filename="../src/main.py" line="487"/>
         <source>4. Post-processing</source>
         <translation>4. Nachbearbeiten</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="431"/>
+        <location filename="../src/main.py" line="499"/>
         <source>Extract audio only</source>
         <translation>Audio nur extrahieren</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="437"/>
+        <location filename="../src/main.py" line="505"/>
         <source>Convert audio</source>
         <translation>Audio konvertieren</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="494"/>
+        <location filename="../src/main.py" line="563"/>
         <source>CONVERT</source>
         <translation>KONVERTIEREN</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="482"/>
+        <location filename="../src/main.py" line="542"/>
         <source>EXTRACT</source>
         <translation>EXTRAHIEREN</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="487"/>
+        <location filename="../src/main.py" line="547"/>
         <source>Detecting audio format...</source>
         <translation>Audioformat wird ermittelt...</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="527"/>
+        <location filename="../src/main.py" line="607"/>
         <source>Audio format: </source>
         <translation>Audioformat: </translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="527"/>
+        <location filename="../src/main.py" line="607"/>
         <source>Audio formats: </source>
         <translation>Audioformate: </translation>
     </message>
     <message>
         <location filename="../src/main.py" line="546"/>
         <source>Sorry</source>
-        <translation>Entschuldigung</translation>
+        <translation type="obsolete">Entschuldigung</translation>
     </message>
     <message>
         <location filename="../src/main.py" line="546"/>
         <source>This feature is not supported yet.</source>
-        <translation>Diese Funktion ist noch nicht verfügbar.</translation>
+        <translation type="obsolete">Diese Funktion ist noch nicht verfügbar.</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="352"/>
+        <location filename="../src/main.py" line="363"/>
         <source>Info</source>
         <translation>Info</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="125"/>
+        <location filename="../src/main.py" line="128"/>
         <source>&amp;Default</source>
         <translation>&amp;Standard</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="131"/>
+        <location filename="../src/main.py" line="134"/>
         <source>&amp;Fusion</source>
         <translation>&amp;Fusion</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="136"/>
+        <location filename="../src/main.py" line="139"/>
         <source>Fusion (d&amp;ark theme)</source>
         <translation>Fusion (d&amp;ark theme)</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="144"/>
+        <location filename="../src/main.py" line="147"/>
         <source>&amp;Options</source>
         <translation>&amp;Optionen</translation>
+    </message>
+    <message>
+        <location filename="../src/main.py" line="432"/>
+        <source>Optionen</source>
+        <translation type="obsolete">Optionen</translation>
+    </message>
+    <message>
+        <location filename="../src/main.py" line="475"/>
+        <source>Delete original video file</source>
+        <translation>Ursprüngliche Videodatei löschen</translation>
+    </message>
+    <message>
+        <location filename="../src/main.py" line="464"/>
+        <source>Options</source>
+        <translation>Optionen</translation>
+    </message>
+    <message>
+        <location filename="../src/main.py" line="620"/>
+        <source>Warning</source>
+        <translation>Warnung</translation>
+    </message>
+    <message>
+        <location filename="../src/main.py" line="620"/>
+        <source>This feature is EXPERIMENTAL.
+Window may become unresponsive for some time.</source>
+        <translation>Diese Funktion ist EXPERIMENTELL.
+Das Fenster könnte eine Zeit lang nicht reagieren.</translation>
     </message>
 </context>
 <context>
@@ -250,12 +277,12 @@ Dieser Bug ist bekannt und wird irgendwann behoben werden...</translation>
 <context>
     <name>FFmpeg</name>
     <message>
-        <location filename="../src/converter.py" line="133"/>
+        <location filename="../src/converter.py" line="151"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="../src/converter.py" line="127"/>
+        <location filename="../src/converter.py" line="145"/>
         <source>Couldn&apos;t find ffprobe. Make sure it&apos;s installed and in your PATH.</source>
         <translation>FFprobe konnte nicht gefunden werden. Stellen Sie sicher, dass es installiert und in der Umgebungsvariablen eingetragen ist.</translation>
     </message>

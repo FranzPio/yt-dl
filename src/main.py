@@ -429,7 +429,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     def create_postprocess_box(self):
         def create_extract_box():
-            extract_box = QtWidgets.QGroupBox(self.tr("Optionen"))
+            extract_box = QtWidgets.QGroupBox(self.tr("Options"))
 
             vbox = QtWidgets.QVBoxLayout()
             hbox1 = QtWidgets.QHBoxLayout()
@@ -461,7 +461,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
             return extract_box
 
         def create_convert_box():
-            convert_box = QtWidgets.QGroupBox(self.tr("Optionen"))
+            convert_box = QtWidgets.QGroupBox(self.tr("Options"))
 
             vbox = QtWidgets.QVBoxLayout()
             hbox1 = QtWidgets.QHBoxLayout()
@@ -616,16 +616,23 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 if self.OPT_DELETE_FILE:
                     os.remove(path)
             print("Finished (more or less) successfully.")
-        elif self.audio_codecs and self.postprocess_mode == self.MODE_CONVERT:
-            # path_list = []
-            # for stream in Downloader.last_downloaded:
-            #     path_list.append(os.path.join(self.destination, stream.default_filename))
-            # for index, path in enumerate(path_list):
-            #     print("Converting", index, "of", len(path_list), "...")
-            #     converter = FFmpeg(path)
-            #     converter.convert_audio(".mp3", converter.ENCODE_VBR)
-            # print("Finished (more or less) successfully.")
-            show_msgbox(self.tr("Sorry"), self.tr("This feature is not supported yet."), QtWidgets.QMessageBox.Warning)
+        elif self.postprocess_mode == self.MODE_CONVERT:
+            show_msgbox(self.tr("Warning"),
+                        self.tr("This feature is EXPERIMENTAL.\nWindow may become unresponsive for some time."),
+                        QtWidgets.QMessageBox.Warning)
+
+            path_list = []
+            for stream in Downloader.last_downloaded:
+                path_list.append(os.path.join(self.destination, stream.default_filename))
+            for index, path in enumerate(path_list):
+                print("Converting", index, "of", len(path_list), "...")
+                converter = FFmpeg(path)
+                converter.convert_audio(".mp3", converter.ENCODE_VBR)
+            print("Finished (more or less) successfully.")
+
+            # show_msgbox(self.tr("Sorry"),
+            #             self.tr("This feature is not supported yet."),
+            #             QtWidgets.QMessageBox.Warning)
 
     def get_videos_from_url(self, page_url=None):
         self.url_box.get_videos_btn.setDisabled(True)
