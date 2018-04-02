@@ -46,9 +46,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     OPT_DELETE_FILE = False
 
-    STYLE_DEFAULT = 0
-    STYLE_FUSION = 1
-    STYLE_FUSION_DARK = 2
+    STYLE_DEFAULT = 10
+    STYLE_FUSION = 11
+    STYLE_FUSION_DARK = 12
 
     def __init__(self):
         super().__init__()
@@ -63,6 +63,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.destination = os.getcwd()
         self.postprocess_mode = None
         self.audio_codecs = {}
+        self.compress_method = FFmpeg.ENCODE_VBR
+        self.bitrate = FFmpeg.default_quality[self.compress_method]
 
         self.init_ui()
 
@@ -74,6 +76,17 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.show()
         self.raise_()
         self.splashie.finish(self)
+
+    def closeEvent(self, *args, **kwargs):
+        if self.threads_workers:
+            for thread, worker in self.threads_workers.items():
+                if isinstance(worker, FFmpeg):
+                    thread.requestInterruption()
+                    while not thread.isFinished():
+                        QtWidgets.qApp.processEvents()
+                        thread.wait(20)
+
+        super().closeEvent(*args, **kwargs)
 
     def create_thread(self, WorkerClass, *args, **kwargs):
         worker = WorkerClass(*args, **kwargs)
@@ -109,7 +122,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                                                       QtCore.Qt.AlignCenter,
                                                       self.minimumSize(),
                                                       QtWidgets.qApp.desktop().availableGeometry()))
-        self.move(self.pos().x(), self.pos().y() - 120)
+        self.move(self.pos().x(), self.pos().y() - 200)
         self.setWindowIcon(QtGui.QIcon(":/youtube_icon.ico"))
         self.setWindowTitle("yt-dl")
 
@@ -332,7 +345,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.save_box.destination_lbl.setText(self.destination)
             self.save_box.download_btn.setEnabled(True)
 
-    def update_progress(self, bytes_downloaded, stream_fsize, videos_downloaded, videos_total):
+    def update_download_progress(self, bytes_downloaded, stream_fsize, videos_downloaded, videos_total):
         self.save_box.progress_bar.setMaximum(stream_fsize)
         self.save_box.progress_bar.setFormat(self.tr("%s of %s MB") %
                                              (round(self.save_box.progress_bar.value() / 1000000, 1),
@@ -340,7 +353,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.save_box.progress_bar.setValue(bytes_downloaded)
         self.save_box.progress_lbl.setText(self.tr("(%s/%s)") % (videos_downloaded, videos_total))
 
-    def toggle_progress_pulse(self, should_pulse):
+    def toggle_download_progress_pulse(self, should_pulse):
         if should_pulse:
             self.save_box.progress_bar.setRange(0, 0)
         else:
@@ -365,6 +378,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
                         QtWidgets.QMessageBox.Information)
 
     def on_download_clicked(self):
+        self.setMinimumSize(self.sizeHint())
+        self.resize(self.sizeHint())
+
         extension = YouTube.uglify(self.settings_box.format_dropdown.currentText())
         resolution = YouTube.uglify(self.settings_box.resolution_dropdown.currentText())
 
@@ -399,12 +415,12 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     downloader.finished.connect(thread.quit)
                     downloader.success.connect(self.on_download_success)
                     downloader.error.connect(show_msgbox)
-                    downloader.progress.connect(self.update_progress)
-                    downloader.pulse.connect(self.toggle_progress_pulse)
+                    downloader.progress.connect(self.update_download_progress)
+                    downloader.pulse.connect(self.toggle_download_progress_pulse)
 
                     thread.started.connect(functools.partial(
                         downloader.download_video, self.videos, extension, resolution, self.destination))
-                    thread.finished.connect(lambda: print("finished!"))
+                    # thread.finished.connect(lambda: print("finished!"))
 
                     thread.start()
             else:
@@ -418,12 +434,12 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     downloader.finished.connect(thread.quit)
                     downloader.success.connect(self.on_download_success)
                     downloader.error.connect(show_msgbox)
-                    downloader.progress.connect(self.update_progress)
-                    downloader.pulse.connect(self.toggle_progress_pulse)
+                    downloader.progress.connect(self.update_download_progress)
+                    downloader.pulse.connect(self.toggle_download_progress_pulse)
 
                     thread.started.connect(functools.partial(
                         downloader.download_playlist, checked_videos, extension, resolution, self.destination))
-                    thread.finished.connect(lambda: print("finished!"))
+                    # thread.finished.connect(lambda: print("finished!"))
 
                     thread.start()
 
@@ -466,19 +482,38 @@ class DownloadWindow(QtWidgets.QMainWindow):
             vbox = QtWidgets.QVBoxLayout()
             hbox1 = QtWidgets.QHBoxLayout()
             hbox2 = QtWidgets.QHBoxLayout()
+            hbox3 = QtWidgets.QHBoxLayout()
 
-            convert_box.audio_formats = QtWidgets.QComboBox()
-            convert_box.audio_formats.hide()
+            convert_box.compr_meth_lbl = QtWidgets.QLabel(self.tr("Compression method:"))
+            convert_box.compr_meth_dropdown = QtWidgets.QComboBox()
+            convert_box.compr_meth_dropdown.addItems(
+                (compr_meth for compr_meth in FFmpeg.compress_methods.keys()))
+            convert_box.compr_meth_dropdown.activated[str].connect(self.on_compress_method_changed)
+
+            convert_box.bitrate_lbl = QtWidgets.QLabel(self.tr("Bitrate:"))
+            convert_box.bitrate_dropdown = QtWidgets.QComboBox()
+            convert_box.bitrate_dropdown.addItems(
+                (self.tr("%s kbps") % bitrate for bitrate in FFmpeg.vbr_bitrates.keys()))
+            convert_box.bitrate_dropdown.activated[str].connect(self.on_bitrate_changed)
+
+            reversed_vbr_dict = collections.OrderedDict((value, key) for key, value in FFmpeg.vbr_bitrates.items())
+            default_bitrate = self.tr("%s kbps") % reversed_vbr_dict[FFmpeg.default_quality[self.compress_method]]
+            convert_box.bitrate_dropdown.setCurrentText(default_bitrate)
 
             convert_box.del_after_chkbox = QtWidgets.QCheckBox()
             convert_box.del_after_chkbox.setChecked(False)
             convert_box.del_after_chkbox.setText(self.tr("Delete original video file"))
             convert_box.del_after_chkbox.clicked.connect(self.on_delete_file_toggled)
 
-            hbox1.addWidget(convert_box.audio_formats)
+            hbox1.addWidget(convert_box.compr_meth_lbl, 1)
+            hbox1.addWidget(convert_box.compr_meth_dropdown, 1)
             vbox.addLayout(hbox1)
-            hbox2.addWidget(convert_box.del_after_chkbox)
+            hbox2.addWidget(convert_box.bitrate_lbl, 1)
+            hbox2.addWidget(convert_box.bitrate_dropdown, 1)
             vbox.addLayout(hbox2)
+            vbox.addSpacing(5)
+            hbox3.addWidget(convert_box.del_after_chkbox)
+            vbox.addLayout(hbox3)
 
             convert_box.setLayout(vbox)
 
@@ -491,6 +526,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         hbox2 = QtWidgets.QHBoxLayout()
         hbox3 = QtWidgets.QHBoxLayout()
         hbox4 = QtWidgets.QHBoxLayout()
+        hbox5 = QtWidgets.QHBoxLayout()
 
         postprocess_box.continue_msg = QtWidgets.QLabel(self.tr("Click \"Find videos...\" to continue."))
 
@@ -516,6 +552,11 @@ class DownloadWindow(QtWidgets.QMainWindow):
         postprocess_box.convert_btn.setDisabled(True)
         postprocess_box.convert_btn.hide()
 
+        postprocess_box.progress_bar = QtWidgets.QProgressBar()
+        postprocess_box.progress_bar.hide()
+        postprocess_box.progress_lbl = QtWidgets.QLabel()
+        postprocess_box.progress_lbl.hide()
+
         hbox1.addWidget(postprocess_box.extract_rbtn)
         spacer = QtWidgets.QSpacerItem(50, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         hbox1.addSpacerItem(spacer)
@@ -528,6 +569,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
         vbox.addLayout(hbox3)
         hbox4.addWidget(postprocess_box.convert_btn)
         vbox.addLayout(hbox4)
+        hbox5.addWidget(postprocess_box.progress_bar)
+        hbox5.addSpacing(5)
+        hbox5.addWidget(postprocess_box.progress_lbl)
+        vbox.addLayout(hbox5)
 
         postprocess_box.setLayout(vbox)
 
@@ -562,6 +607,30 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
             self.postprocess_box.convert_btn.setText(self.tr("CONVERT"))
             self.postprocess_box.convert_btn.setEnabled(True)
+
+    def on_compress_method_changed(self, new_compr_method):
+        self.postprocess_box.convert_box.bitrate_dropdown.clear()
+        self.compress_method = FFmpeg.compress_methods[new_compr_method]
+
+        if self.compress_method == FFmpeg.ENCODE_VBR:
+            new_bitrates = FFmpeg.vbr_bitrates.keys()
+            reversed_bitrate_dict = collections.OrderedDict((value, key) for key, value in FFmpeg.vbr_bitrates.items())
+        else:
+            new_bitrates = FFmpeg.cbr_bitrates.keys()
+            reversed_bitrate_dict = collections.OrderedDict((value, key) for key, value in FFmpeg.cbr_bitrates.items())
+
+        self.postprocess_box.convert_box.bitrate_dropdown.addItems((self.tr("%s kbps") % bitrate for bitrate in new_bitrates))
+
+        default_bitrate = self.tr("%s kbps") % reversed_bitrate_dict[FFmpeg.default_quality[self.compress_method]]
+        self.postprocess_box.convert_box.bitrate_dropdown.setCurrentText(default_bitrate)
+        self.bitrate = FFmpeg.default_quality[self.compress_method]
+
+    def on_bitrate_changed(self, new_bitrate):
+        new_bitrate = new_bitrate.replace(self.tr("kbps"), "").strip()
+        if self.compress_method == FFmpeg.ENCODE_VBR:
+            self.bitrate = FFmpeg.vbr_bitrates[new_bitrate]
+        else:
+            self.bitrate = FFmpeg.cbr_bitrates[new_bitrate]
 
     def on_delete_file_toggled(self):
         if self.sender().isChecked():
@@ -610,29 +679,67 @@ class DownloadWindow(QtWidgets.QMainWindow):
     def on_convert_clicked(self):
         if self.audio_codecs and self.postprocess_mode == self.MODE_EXTRACT:
             for index, (path, codec) in enumerate(self.audio_codecs.items()):
-                print("Converting", index, "of", len(self.audio_codecs), "...")
-                converter = FFmpeg(path)
-                converter.extract_audio(codec)
-                if self.OPT_DELETE_FILE:
+                thread, converter = self.create_thread(FFmpeg, path)
+
+                converter.finished.connect(thread.quit)  # TODO: success signal + msg
+                converter.error.connect(show_msgbox)
+                converter.progress.connect(self.update_convert_progress)
+
+                thread.started.connect(functools.partial(converter.extract_audio,
+                                                         codec, vconv=index + 1, vtotal=len(self.audio_codecs)))
+
+                self.postprocess_box.progress_bar.show()
+                self.postprocess_box.progress_lbl.show()
+
+                thread.start()
+
+                while not thread.isFinished():
+                    QtWidgets.qApp.processEvents()
+                    thread.wait(20)
+
+            if self.OPT_DELETE_FILE:
+                for path in self.audio_codecs.keys():
                     os.remove(path)
-            print("Finished (more or less) successfully.")
+                self.audio_codecs.clear()
+                Downloader.last_downloaded.clear()
+                self.postprocess_box.convert_btn.setDisabled(True)
+
         elif self.postprocess_mode == self.MODE_CONVERT:
-            show_msgbox(self.tr("Warning"),
-                        self.tr("This feature is EXPERIMENTAL.\nWindow may become unresponsive for some time."),
-                        QtWidgets.QMessageBox.Warning)
-
-            path_list = []
-            for stream in Downloader.last_downloaded:
-                path_list.append(os.path.join(self.destination, stream.default_filename))
+            path_list = [os.path.join(self.destination, stream.default_filename) for stream in Downloader.last_downloaded]
             for index, path in enumerate(path_list):
-                print("Converting", index, "of", len(path_list), "...")
-                converter = FFmpeg(path)
-                converter.convert_audio(".mp3", converter.ENCODE_VBR)
-            print("Finished (more or less) successfully.")
+                thread, converter = self.create_thread(FFmpeg, path)
 
-            # show_msgbox(self.tr("Sorry"),
-            #             self.tr("This feature is not supported yet."),
-            #             QtWidgets.QMessageBox.Warning)
+                converter.finished.connect(thread.quit)
+                converter.error.connect(show_msgbox)
+                converter.progress.connect(self.update_convert_progress)
+
+                thread.started.connect(functools.partial(
+                    converter.convert_audio, ".mp3", self.compress_method, self.bitrate, index + 1, len(path_list)))
+
+                self.postprocess_box.progress_bar.show()
+                self.postprocess_box.progress_lbl.show()
+
+                thread.start()
+
+                while not thread.isFinished():
+                    QtWidgets.qApp.processEvents()
+                    thread.wait(20)
+
+            if self.OPT_DELETE_FILE:
+                for path in path_list:
+                    os.remove(path)
+                self.audio_codecs.clear()
+                Downloader.last_downloaded.clear()
+                self.postprocess_box.convert_btn.setDisabled(True)
+
+        show_msgbox(self.tr("Info"), self.tr("Finished converting."), QtWidgets.QMessageBox.Information)
+
+    def update_convert_progress(self, current_duration, total_duration, videos_converted, videos_total):
+        self.postprocess_box.progress_bar.setMaximum(total_duration.total_seconds())
+        self.postprocess_box.progress_bar.setFormat(self.tr("%s of %s") %
+                                                    (str(current_duration), str(total_duration)))
+        self.postprocess_box.progress_bar.setValue(current_duration.total_seconds())
+        self.postprocess_box.progress_lbl.setText(self.tr("(%s/%s)") % (videos_converted, videos_total))
 
     def get_videos_from_url(self, page_url=None):
         self.url_box.get_videos_btn.setDisabled(True)
