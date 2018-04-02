@@ -4,11 +4,11 @@ easy-to-use YouTube downloader (GUI), created with PyQt5, pytube and beautifulso
 ### Features
 - download videos or playlists from YouTube
 - mp4, webm, 3gp supported
-- extract audio from downloaded video files
+- extract audio from downloaded video files / convert audio to mp3
 
 ### To do
-- entirely support pytube v7 (e.g. resolutions >= 1080p)
-- convert audio to e.g. mp3
+- support YouTube adaptive streams (i.e. resolutions >= 1080p)
+- convert video to other formats (e.g. mkv, avi)
 - bundle ffmpeg or automatically download + install it (needed to combine yt's separate audio / video streams)
 - set ID3 tags to files (e.g. title, creator, thumbnail)
 
