@@ -218,12 +218,19 @@ class FFmpeg(QtCore.QObject):
             parsed_line = parsed_line.replace(omit, "")
 
         progress_list = parsed_line.strip("=\n").split("=")
-        kb_conv_str, duration_str, bitrate_str, speed_str = progress_list
+        # kb_conv_str, duration_str, bitrate_str, speed_str = progress_list
+        #
+        # kb_conv = int(kb_conv_str)
+        # duration = sexagesimal_to_timedelta(duration_str)
+        # bitrate = float(bitrate_str)
+        # speed = float(speed_str)
 
-        kb_conv = int(kb_conv_str)
-        duration = sexagesimal_to_timedelta(duration_str)
-        bitrate = float(bitrate_str)
-        speed = float(speed_str)
+        # TODO: investigate: above didn't seem to work on Ubuntu 16.04, probably due to an older version of ffmpeg in the sources
+        #       -> workaround below
+        kb_conv = int(progress_list[0])
+        duration = sexagesimal_to_timedelta(progress_list[1])
+        bitrate = float(progress_list[2])
+        speed = 0
 
         return kb_conv, duration, bitrate, speed
 
