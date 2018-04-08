@@ -161,8 +161,7 @@ class AboutDialog(QtWidgets.QDialog):
         hbox6.setAlignment(QtCore.Qt.AlignCenter)
 
         self.license_btn = QtWidgets.QPushButton(self.tr("&License"))
-        # lfile = QtCore.QFile(":/LICENSE.html")
-        lfile = QtCore.QFile("C:/Users/Franz/PycharmProjects/yt-dl/LICENSE.html")
+        lfile = QtCore.QFile(":/LICENSE.html")
         fallback_msg = self.tr("LICENSE file couldn't be found/accessed.\nyt-dl used to be "
                                "under the GNU GPL v3.\n"
                                "Please update the application or visit "
