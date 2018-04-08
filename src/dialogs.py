@@ -3,14 +3,15 @@ import traceback
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-from config import VERSION, ICONS8_URL, LOADINGIO_URL, GITHUB_URL, ZIP_URL, EXE
+from config import VERSION, ICONS8_URL, LOADINGIO_URL, GITHUB_URL, GPL_URL, ZIP_URL, EXE
 from updater import Update
+from utils import get_download_window
 
-LICENSE = None
+license_txt = None
 
 
 def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, details=None, is_traceback=False):
-    msgbox = QtWidgets.QMessageBox()
+    msgbox = QtWidgets.QMessageBox(parent=get_download_window())
     msgbox.setWindowTitle(title)
     msgbox.setIcon(icon)
     msgbox.setText(msg)
@@ -22,9 +23,8 @@ def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, details=None, is_
     msgbox.exec()
 
 
-def show_splash(parent=None, opacity=0.95, vfont_size=11, vfont_bold=True):
-    pixmap = QtGui.QPixmap(":/youtube_splash_screen.png")
-    splashie = QtWidgets.QSplashScreen(parent if parent else None, pixmap, QtCore.Qt.WindowStaysOnTopHint)
+def show_splash(pixmap, parent=None, opacity=0.95, vfont_size=11, vfont_bold=True):
+    splashie = QtWidgets.QSplashScreen(parent, pixmap, QtCore.Qt.WindowStaysOnTopHint)
     big_font = splashie.font()
     big_font.setPointSize(vfont_size)
     big_font.setBold(vfont_bold)
@@ -36,9 +36,10 @@ def show_splash(parent=None, opacity=0.95, vfont_size=11, vfont_bold=True):
     return splashie
 
 
-def show_license(parent=None):
-    global LICENSE
-    dlg = QtWidgets.QDialog(parent)
+def show_license(lfile, fallback_msg="", is_html=False, parent=None):
+    global license_txt
+    dlg = QtWidgets.QDialog(parent, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowTitleHint
+                            | QtCore.Qt.WindowMinMaxButtonsHint | QtCore.Qt.WindowCloseButtonHint)
     dlg.resize(600, 600)
     dlg.setWindowTitle(QtCore.QCoreApplication.translate("show_license", "License"))
 
@@ -46,22 +47,23 @@ def show_license(parent=None):
     hbox1 = QtWidgets.QHBoxLayout()
     hbox2 = QtWidgets.QHBoxLayout()
 
-    txt_edit = QtWidgets.QTextEdit()
-    txt_edit.setReadOnly(True)
-    if LICENSE is None:
-        try:
-            lfile = QtCore.QFile(":/LICENSE")
-            if not lfile.open(QtCore.QIODevice.ReadOnly | QtCore.QFile.Text):
-                raise FileNotFoundError
-            LICENSE = QtCore.QTextStream(lfile).readAll()
+    if license_txt is None:
+        if lfile.open(QtCore.QIODevice.ReadOnly | QtCore.QFile.Text):
+            license_txt = QtCore.QTextStream(lfile).readAll()
             lfile.close()
-        except (FileNotFoundError, OSError):
-            LICENSE = QtCore.QCoreApplication.translate("show_license",
-                                                        "LICENSE file couldn't be found/accessed.\nyt-dl used to be "
-                                                        "under the GNU GPL v3.\n "
-                                                        "Please update the application or visit "
-                                                        "https://github.com/FranzPio/yt-dl for more information.")
-    txt_edit.insertPlainText(LICENSE)
+        else:
+            license_txt = fallback_msg
+
+    if is_html:
+        txt_edit = QtWidgets.QTextBrowser()
+        txt_edit.setReadOnly(True)
+        txt_edit.setHtml(license_txt)
+        txt_edit.setOpenExternalLinks(True)
+    else:
+        txt_edit = QtWidgets.QTextEdit()
+        txt_edit.setReadOnly(True)
+        txt_edit.insertPlainText(license_txt)
+
     text_cursor = txt_edit.textCursor()
     text_cursor.movePosition(QtGui.QTextCursor.Start)
     txt_edit.setTextCursor(text_cursor)
@@ -93,6 +95,7 @@ class AboutDialog(QtWidgets.QDialog):
         hbox4 = QtWidgets.QHBoxLayout()
         hbox5 = QtWidgets.QHBoxLayout()
         hbox6 = QtWidgets.QHBoxLayout()
+        hbox7 = QtWidgets.QHBoxLayout()
 
         self.icon = QtGui.QPixmap(":/youtube_icon_red.png").scaled(
             92, 92, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation)
@@ -116,28 +119,55 @@ class AboutDialog(QtWidgets.QDialog):
         hbox3.addWidget(self.version_lbl)
         hbox3.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.copyright_lbl = QtWidgets.QLabel("\u00A9 Franz Piontek, 2017")
-
-        hbox4.addWidget(self.copyright_lbl)
-        hbox4.setAlignment(QtCore.Qt.AlignCenter)
-
         self.desc_lbl = QtWidgets.QLabel(self.tr("An easy-to-use YouTube downloader (GUI),<br>"
-                                                 "created with PyQt5, pytube and beautifulsoup4.<br>")
-                                         + self.tr("Icons: ")
-                                         + "<a href=\"" + ICONS8_URL + "\">" + ICONS8_URL + "</a><br>"
-                                         + self.tr("Loading GIF: ")
-                                         + "<a href=\"" + LOADINGIO_URL + "\">" + LOADINGIO_URL + "</a><br>"
-                                         + self.tr("Github page: ")
-                                         + "<a href=\"" + GITHUB_URL + "\">" + GITHUB_URL + "</a>")
+                                                 "created with PyQt5, pytube and beautifulsoup4.<br>"
+                                                 "Icons: <a href=\"{0}\">{0}</a><br>"
+                                                 "Loading GIF: <a href=\"{1}\">{1}</a><br>"
+                                                 "Github page: <a href=\"{2}\">{2}</a>")
+                                         .format(ICONS8_URL, LOADINGIO_URL, GITHUB_URL))
         self.desc_lbl.setTextFormat(QtCore.Qt.RichText)
         self.desc_lbl.setOpenExternalLinks(True)
         self.desc_lbl.setAlignment(QtCore.Qt.AlignCenter)
 
-        hbox5.addWidget(self.desc_lbl)
+        hbox4.addWidget(self.desc_lbl)
+        hbox4.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.copyright_lbl = QtWidgets.QLabel("\u00A9 Franz Piontek, 2017")
+
+        hbox5.addWidget(self.copyright_lbl)
         hbox5.setAlignment(QtCore.Qt.AlignCenter)
 
+        self.license_note_lbl = QtWidgets.QLabel(self.tr("This program is free software: you can redistribute it "
+                                                         "and/or<br>modify it under the terms of the GNU General "
+                                                         "Public License as<br>published by the Free Software "
+                                                         "Foundation, either version 3 of<br>the License, or "
+                                                         "(at your option) any later version.<br>"
+
+                                                         "This program is distributed in the hope that it will be "
+                                                         "useful, but<br>WITHOUT ANY WARRANTY; without even the "
+                                                         "implied warranty<br>of MERCHANTABILITY or FITNESS FOR A "
+                                                         "PARTICULAR PURPOSE.<br>"
+                                                         "See the GNU General Public License for more details<br>"
+                                                         "(click \"License\" or visit <a href=\"{0}\">{0}</a>).")
+                                                 .format(GPL_URL))
+        self.license_note_lbl.setTextFormat(QtCore.Qt.RichText)
+        self.license_note_lbl.setOpenExternalLinks(True)
+        self.license_note_lbl.setAlignment(QtCore.Qt.AlignCenter)
+        font = self.license_note_lbl.font()
+        font.setPointSize(font.pointSize() - 2)
+        self.license_note_lbl.setFont(font)
+
+        hbox6.addWidget(self.license_note_lbl)
+        hbox6.setAlignment(QtCore.Qt.AlignCenter)
+
         self.license_btn = QtWidgets.QPushButton(self.tr("&License"))
-        self.license_btn.clicked.connect(lambda: show_license(self))
+        # lfile = QtCore.QFile(":/LICENSE.html")
+        lfile = QtCore.QFile("C:/Users/Franz/PycharmProjects/yt-dl/LICENSE.html")
+        fallback_msg = self.tr("LICENSE file couldn't be found/accessed.\nyt-dl used to be "
+                               "under the GNU GPL v3.\n"
+                               "Please update the application or visit "
+                               "https://github.com/FranzPio/yt-dl for more information.")
+        self.license_btn.clicked.connect(lambda: show_license(lfile, fallback_msg, is_html=True, parent=self))
 
         self.about_qt_btn = QtWidgets.QPushButton(self.tr("&About Qt"))
         self.about_qt_btn.clicked.connect(lambda: QtWidgets.QMessageBox.aboutQt(self, self.tr("About Qt")))
@@ -146,19 +176,22 @@ class AboutDialog(QtWidgets.QDialog):
         self.close_btn.clicked.connect(self.close)
         self.close_btn.setDefault(True)
 
-        hbox6.addWidget(self.license_btn)
-        hbox6.addWidget(self.about_qt_btn)
-        hbox6.addStretch(1)
-        hbox6.addWidget(self.close_btn)
-        hbox6.setAlignment(QtCore.Qt.AlignCenter)
+        hbox7.addWidget(self.license_btn)
+        hbox7.addWidget(self.about_qt_btn)
+        hbox7.addStretch(1)
+        hbox7.addWidget(self.close_btn)
+        hbox7.setAlignment(QtCore.Qt.AlignCenter)
 
         vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
         vbox.addLayout(hbox3)
-        vbox.addLayout(hbox5)
         vbox.addLayout(hbox4)
         vbox.addSpacing(5)
+        vbox.addLayout(hbox5)
+        vbox.addSpacing(7)
         vbox.addLayout(hbox6)
+        vbox.addSpacing(12)
+        vbox.addLayout(hbox7)
 
         self.setLayout(vbox)
 

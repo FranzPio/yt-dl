@@ -52,7 +52,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.splashie = show_splash(self)
+        self.splashie = show_splash(QtGui.QPixmap(":/youtube_splash_screen.png"), self)
         QtCore.QTimer.singleShot(1200, self.show_window)
 
         self.threads_workers = collections.OrderedDict()

@@ -1,6 +1,18 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
 
 
+def get_main_window(class_name):
+    toplevel_widgets = QtWidgets.qApp.topLevelWidgets()
+    for widget in toplevel_widgets:
+        if widget.__class__.__name__ == class_name:
+            return widget
+    return None
+
+
+def get_download_window():
+    return get_main_window("DownloadWindow")
+
+
 def setup_palette(color, widget_list=None, color_role=QtGui.QPalette.Highlight):
     palette = QtGui.QPalette()
     palette.setColor(QtGui.QPalette.Active, color_role, color)

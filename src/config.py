@@ -1,7 +1,7 @@
 import os.path
 import sys
 
-VERSION = "0.15.1"
+VERSION = "0.15.2"
 IS_FROZEN = hasattr(sys, "frozen")
 
 if IS_FROZEN:
@@ -13,6 +13,7 @@ else:
 
 APP_PATH = os.path.dirname(FILE)
 
+GPL_URL = "http://www.gnu.org/licenses/gpl.html"
 ZIP_URL = "https://github.com/FranzPio/yt-dl/zipball/master/"
 GITHUB_URL = "https://github.com/FranzPio/yt-dl"
 ICONS8_URL = "https://icons8.com"
