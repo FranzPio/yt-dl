@@ -4,49 +4,48 @@
 <context>
     <name>AboutDialog</name>
     <message>
-        <location filename="../src/dialogs.py" line="167"/>
+        <location filename="../src/dialogs.py" line="199"/>
         <source>About</source>
         <translation>Über yt-dl</translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="124"/>
-        <source>An easy-to-use YouTube downloader (GUI),&lt;br&gt;created with PyQt5, pytube and beautifulsoup4.&lt;br&gt;</source>
-        <translation>Ein einfach bedienbarer YouTube-Downloader (GUI),&lt;br&gt;erstellt mit PyQt5, pytube und beautifulsoup4.&lt;br&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/dialogs.py" line="124"/>
-        <source>Icons: </source>
-        <translation>Symbole: </translation>
-    </message>
-    <message>
-        <location filename="../src/dialogs.py" line="124"/>
-        <source>Loading GIF: </source>
-        <translation>Lade-GIF: </translation>
-    </message>
-    <message>
-        <location filename="../src/dialogs.py" line="124"/>
-        <source>Github page: </source>
-        <translation>Github-Seite: </translation>
-    </message>
-    <message>
-        <location filename="../src/dialogs.py" line="139"/>
+        <location filename="../src/dialogs.py" line="163"/>
         <source>&amp;License</source>
         <translation>&amp;Lizenz</translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="142"/>
+        <location filename="../src/dialogs.py" line="171"/>
         <source>&amp;About Qt</source>
         <translation>&amp;Über Qt</translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="143"/>
+        <location filename="../src/dialogs.py" line="172"/>
         <source>About Qt</source>
         <translation>Über Qt</translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="145"/>
+        <location filename="../src/dialogs.py" line="174"/>
         <source>&amp;Close</source>
         <translation>&amp;Schließen</translation>
+    </message>
+    <message>
+        <location filename="../src/dialogs.py" line="122"/>
+        <source>An easy-to-use YouTube downloader (GUI),&lt;br&gt;created with PyQt5, pytube and beautifulsoup4.&lt;br&gt;Icons: &lt;a href=&quot;{0}&quot;&gt;{0}&lt;/a&gt;&lt;br&gt;Loading GIF: &lt;a href=&quot;{1}&quot;&gt;{1}&lt;/a&gt;&lt;br&gt;Github page: &lt;a href=&quot;{2}&quot;&gt;{2}&lt;/a&gt;</source>
+        <translation>Ein einfach bedienbarer YouTube-Downloader (GUI),&lt;br&gt;erstellt mit PyQt5, pytube und beautifulsoup4.&lt;br&gt;Symbole: &lt;a href=&quot;{0}&quot;&gt;{0}&lt;/a&gt;&lt;br&gt;Lade-GIF: &lt;a href=&quot;{1}&quot;&gt;{1}&lt;/a&gt;&lt;br&gt;Github-Seite: &lt;a href=&quot;{2}&quot;&gt;{2}&lt;/a&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/dialogs.py" line="140"/>
+        <source>This program is free software: you can redistribute it and/or&lt;br&gt;modify it under the terms of the GNU General Public License as&lt;br&gt;published by the Free Software Foundation, either version 3 of&lt;br&gt;the License, or (at your option) any later version.&lt;br&gt;This program is distributed in the hope that it will be useful, but&lt;br&gt;WITHOUT ANY WARRANTY; without even the implied warranty&lt;br&gt;of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.&lt;br&gt;See the GNU General Public License for more details&lt;br&gt;(click &quot;License&quot; or visit &lt;a href=&quot;{0}&quot;&gt;{0}&lt;/a&gt;).</source>
+        <translation>Dieses Programm ist freie Software: Sie können es unter den&lt;br&gt;Bedingungen der GNU General Public License, wie von der&lt;br&gt;Free Software Foundation veröffentlicht, weitergeben und/oder&lt;br&gt;modifizieren, entweder gemäß Version 3 der Lizenz oder&lt;br&gt;(nach Ihrer Wahl) jeder späteren Version.&lt;br&gt;Die Veröffentlichung dieses Programms erfolgt in der Hoffnung,&lt;br&gt;dass es Ihnen von Nutzen sein wird, aber OHNE JEDWEDE GARANTIE,&lt;br&gt;ohne auch nur die implizite Garantie der MARKTREIFE oder der&lt;br&gt;VERWENDBARKEIT FÜR EINEN BESTIMMTEN ZWECK. Details finden Sie&lt;br&gt;in der GNU General Public License (klicken Sie auf &quot;Lizenz&quot; oder&lt;br&gt;besuchen Sie &lt;a href=&quot;{0}&quot;&gt;{0}&lt;/a&gt;).</translation>
+    </message>
+    <message>
+        <location filename="../src/dialogs.py" line="165"/>
+        <source>LICENSE file couldn&apos;t be found/accessed.
+yt-dl used to be under the GNU GPL v3.
+Please update the application or visit https://github.com/FranzPio/yt-dl for more information.</source>
+        <translation>Die Lizenzdatei konnte nicht gefunden/abgerufen werden.
+yt-dl war zuletzt unter der GNU GPL 3-Lizenz lizenziert.
+Updaten Sie die Anwendung oder besuchen Sie https://github.com/FranzPio/yt-dl für weitere Informationen.</translation>
     </message>
 </context>
 <context>
@@ -192,16 +191,6 @@
         <translation>Audioformate: </translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="546"/>
-        <source>Sorry</source>
-        <translation type="obsolete">Entschuldigung</translation>
-    </message>
-    <message>
-        <location filename="../src/main.py" line="546"/>
-        <source>This feature is not supported yet.</source>
-        <translation type="obsolete">Diese Funktion ist noch nicht verfügbar.</translation>
-    </message>
-    <message>
         <location filename="../src/main.py" line="735"/>
         <source>Info</source>
         <translation>Info</translation>
@@ -227,11 +216,6 @@
         <translation>&amp;Optionen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="432"/>
-        <source>Optionen</source>
-        <translation type="obsolete">Optionen</translation>
-    </message>
-    <message>
         <location filename="../src/main.py" line="505"/>
         <source>Delete original video file</source>
         <translation>Ursprüngliche Videodatei löschen</translation>
@@ -240,18 +224,6 @@
         <location filename="../src/main.py" line="480"/>
         <source>Options</source>
         <translation>Optionen</translation>
-    </message>
-    <message>
-        <location filename="../src/main.py" line="620"/>
-        <source>Warning</source>
-        <translation type="obsolete">Warnung</translation>
-    </message>
-    <message>
-        <location filename="../src/main.py" line="620"/>
-        <source>This feature is EXPERIMENTAL.
-Window may become unresponsive for some time.</source>
-        <translation type="obsolete">Diese Funktion ist EXPERIMENTELL.
-Das Fenster könnte eine Zeit lang nicht reagieren.</translation>
     </message>
     <message>
         <location filename="../src/main.py" line="487"/>
@@ -307,12 +279,12 @@ Dieser Bug ist bekannt und wird irgendwann behoben werden...</translation>
 <context>
     <name>FFmpeg</name>
     <message>
-        <location filename="../src/converter.py" line="252"/>
+        <location filename="../src/converter.py" line="259"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="../src/converter.py" line="246"/>
+        <location filename="../src/converter.py" line="253"/>
         <source>Couldn&apos;t find ffprobe. Make sure it&apos;s installed and in your PATH.</source>
         <translation>FFprobe konnte nicht gefunden werden. Stellen Sie sicher, dass es installiert und in der Umgebungsvariablen eingetragen ist.</translation>
     </message>
@@ -415,24 +387,9 @@ Die Anwendung wird neugestartet um die Änderungen anzuwenden.</translation>
         <translation>Keine URL angegeben. Geben Sie eine URL ein um fortzufahren.</translation>
     </message>
     <message>
-        <location filename="../src/youtube.py" line="62"/>
-        <source>Invalid url: no videos could be found. Check url for typos.</source>
-        <translation type="obsolete">Ungültige URL: keine Videos gefunden. Überprüfen Sie die URL auf Tippfehler.</translation>
-    </message>
-    <message>
-        <location filename="../src/youtube.py" line="69"/>
-        <source>An error occurred. Couldn&apos;t get video(s). Try another url.</source>
-        <translation type="obsolete">Ein Fehler ist aufgetreten. Videos konnten nicht abgerufen werden. Probieren Sie eine andere URL.</translation>
-    </message>
-    <message>
         <location filename="../src/youtube.py" line="70"/>
         <source>An error occurred. Could not get video(s). Try another URL.</source>
         <translation>Ein Fehler ist aufgetreten. Videos konnten nicht abgerufen werden. Probieren Sie eine andere URL.</translation>
-    </message>
-    <message>
-        <location filename="../src/youtube.py" line="64"/>
-        <source>Invalid URL: no videos found. Check URL for typos. Invalid proxy / firewall / network settings can cause this error as well.</source>
-        <translation type="obsolete">Ungültige URL: keine Videos gefunden. Überprüfen Sie die URL auf Tippfehler. Ungültige Proxy- / Firewall- / Netzwerkeinstellungen können diese Fehlermeldung auch verursachen.</translation>
     </message>
     <message>
         <location filename="../src/youtube.py" line="64"/>
@@ -458,21 +415,12 @@ Ungültige Proxy- / Firewall- / Netzwerkeinstellungen können diese Fehlermeldun
 <context>
     <name>show_license</name>
     <message>
-        <location filename="../src/dialogs.py" line="43"/>
+        <location filename="../src/dialogs.py" line="44"/>
         <source>License</source>
         <translation>Lizenz</translation>
     </message>
     <message>
-        <location filename="../src/dialogs.py" line="59"/>
-        <source>LICENSE file couldn&apos;t be found/accessed.
-yt-dl used to be under the GNU GPL v3.
- Please update the application or visit https://github.com/FranzPio/yt-dl for more information.</source>
-        <translation>Die Lizenzdatei konnte nicht gefunden/abgerufen werden.
-yt-dl war zuletzt unter der GNU GPL 3-Lizenz lizenziert.
-Updaten Sie die Anwendung oder besuchen Sie https://github.com/FranzPio/yt-dl für weitere Informationen.</translation>
-    </message>
-    <message>
-        <location filename="../src/dialogs.py" line="69"/>
+        <location filename="../src/dialogs.py" line="71"/>
         <source>&amp;Close</source>
         <translation>&amp;Schließen</translation>
     </message>

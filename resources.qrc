@@ -6,7 +6,7 @@
     <file alias="rolling.gif">resources/rolling.gif</file>
     <file alias="FiraSans-Regular.ttf">resources/FiraSans-Regular.ttf</file>
     <file alias="FiraSans-Bold.ttf">resources/FiraSans-Bold.ttf</file>
-    <file alias="LICENSE">LICENSE</file>
+    <file alias="LICENSE.html">resources/LICENSE.html</file>
     <file alias="lang_de.qm">resources/lang_de.qm</file>
 </qresource>
 </RCC>
