@@ -1,4 +1,47 @@
+import json
+import os.path
+
 from PyQt5 import QtCore, QtWidgets, QtGui
+
+
+# probably buffer / queue changes since writing to disk might not be fast enough (???)
+class SettingsFile:
+    def __init__(self, fpath):
+        self.path = fpath
+        self.file = None
+
+    def __enter__(self):
+        if os.path.exists(self.path):
+            self.file = open(self.path, "r+")
+        else:
+            self.file = open(self.path, "w+")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.file.close()
+
+    def clear(self):
+        open(self.path, "w").close()
+        self.file = open(self.path, "r+")
+
+    def readall(self):
+        if os.path.getsize(self.path) > 0:
+            return json.load(self.file)
+        else:
+            return {}
+
+    def read(self, key):
+        sdict = self.readall()
+        try:
+            return sdict[key]
+        except KeyError:
+            return None
+
+    def write(self, **kwargs):
+        sdict = self.readall()
+        sdict.update(kwargs)
+        self.clear()
+        json.dump(sdict, self.file)
 
 
 def get_main_window(class_name):

@@ -23,15 +23,15 @@ def show_msgbox(title, msg, icon=QtWidgets.QMessageBox.NoIcon, details=None, is_
     msgbox.exec()
 
 
-def show_splash(pixmap, parent=None, opacity=0.95, vfont_size=11, vfont_bold=True):
+def show_splash(pixmap, parent=None, opacity=0.97, vfont="Fira Sans", vfont_size=11, vfont_bold=True):
     splashie = QtWidgets.QSplashScreen(parent, pixmap, QtCore.Qt.WindowStaysOnTopHint)
-    big_font = splashie.font()
-    big_font.setPointSize(vfont_size)
-    big_font.setBold(vfont_bold)
-    splashie.setFont(big_font)
+    font = QtGui.QFont(vfont) if vfont else splashie.font()
+    font.setPointSize(vfont_size)
+    font.setBold(vfont_bold)
+    splashie.setFont(font)
     splashie.setWindowOpacity(opacity)
     if VERSION:
-        splashie.showMessage("v" + VERSION, QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom, QtCore.Qt.white)
+        splashie.showMessage("v" + VERSION, QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom, QtCore.Qt.red)
     splashie.show()
     return splashie
 
@@ -97,7 +97,7 @@ class AboutDialog(QtWidgets.QDialog):
         hbox6 = QtWidgets.QHBoxLayout()
         hbox7 = QtWidgets.QHBoxLayout()
 
-        self.icon = QtGui.QPixmap(":/youtube_icon_red.png").scaled(
+        self.icon = QtGui.QPixmap(":/ytdl_icon.png").scaled(
             92, 92, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation)
         self.icon_lbl = QtWidgets.QLabel()
         self.icon_lbl.setPixmap(self.icon)
