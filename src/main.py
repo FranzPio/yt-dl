@@ -7,11 +7,11 @@ import traceback
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-from config import APP_PATH
+from config import APP_PATH, USER_DIR, SFPATH
 from converter import FFmpeg
 from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
 from download import Downloader
-from utils import LineEdit, ElidedLabel, FusionDarkPalette
+from utils import LineEdit, ElidedLabel, FusionDarkPalette, SettingsFile
 from youtube import YouTube
 import resources
 
@@ -52,7 +52,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.splashie = show_splash(QtGui.QPixmap(":/youtube_splash_screen.png"), self)
+        self.splashie = show_splash(QtGui.QPixmap(":/ytdl_splash_screen"), self)
         QtCore.QTimer.singleShot(1200, self.show_window)
 
         self.threads_workers = collections.OrderedDict()
@@ -123,7 +123,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                                                       self.minimumSize(),
                                                       QtWidgets.qApp.desktop().availableGeometry()))
         self.move(self.pos().x(), self.pos().y() - 200)
-        self.setWindowIcon(QtGui.QIcon(":/youtube_icon.ico"))
+        self.setWindowIcon(QtGui.QIcon(":/ytdl_icon.png"))
         self.setWindowTitle("yt-dl")
 
     def create_toolbar(self):
@@ -175,6 +175,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
         about_dlg.exec()
 
     def change_style(self, new_style):
+        # FIXME: since this "signal" is called manually in load_style_settings(), we can't check the menu entry like this
+        # self.sender().setChecked(True)
         current_style = QtWidgets.qApp.style().objectName()
 
         if new_style != current_style:
@@ -186,13 +188,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 QtWidgets.qApp.setStyle(former_style)
                 QtWidgets.qApp.setPalette(former_style.standardPalette())
 
-                if sys.platform == "win32":
-                    font = QtGui.QFont("Segoe UI", 9)
-                else:
-                    font = QtGui.QFont()
-                    font.setFamily(font.defaultFamily())
-
-                QtWidgets.qApp.setFont(font)
+                QtWidgets.qApp.setFont(default_font)
 
             elif new_style in (self.STYLE_FUSION, self.STYLE_FUSION_DARK):
                 # TODO: change background in palette of Fusion style
@@ -217,6 +213,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     palette.setColor(QtGui.QPalette.Inactive, QtGui.QPalette.Highlight, QtGui.QColor(240, 240, 240))
                     QtWidgets.qApp.setPalette(palette)
 
+            with SettingsFile(SFPATH) as sfile:
+                sfile.write(style=new_style)
             self.setMinimumSize(self.sizeHint())
             self.resize(self.sizeHint())
 
@@ -838,8 +836,15 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.postprocess_box.convert_btn.show()
 
 
+def load_style_settings():
+    with SettingsFile(SFPATH) as sfile:
+        saved_style = sfile.read("style")
+        if saved_style is not None:
+            window.change_style(saved_style)
+
+
 def startup():
-    global window, default_style
+    global window, default_style, default_font
     logfile = os.path.join(APP_PATH, "yt-dl.log")
     if os.path.isfile(logfile):
         os.remove(logfile)
@@ -850,8 +855,10 @@ def startup():
     default_style = app.style().objectName()
 
     if sys.platform == "win32":
-        font = QtGui.QFont("Segoe UI", 9)
-        app.setFont(font)
+        default_font = QtGui.QFont("Segoe UI", 9)
+        app.setFont(default_font)
+    else:
+        default_font = app.font()
 
     QtGui.QFontDatabase.addApplicationFont(":/FiraSans-Regular.ttf")
     QtGui.QFontDatabase.addApplicationFont(":/FiraSans-Bold.ttf")
@@ -872,6 +879,7 @@ def startup():
             app.installTranslator(tr)
 
     window = DownloadWindow()
+    load_style_settings()
     app.exec()
 
 
