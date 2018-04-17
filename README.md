@@ -1,5 +1,6 @@
-[https://ci.appveyor.com/api/projects/status/github/FranzPio/yt-dl?svg=true](https://ci.appveyor.com/api/projects/status/github/FranzPio/yt-dl?svg=true)
 # yt-dl
+[![Windows builds](https://ci.appveyor.com/api/projects/status/github/FranzPio/yt-dl?svg=true)](https://ci.appveyor.com/project/FranzPio/yt-dl)
+
 easy-to-use YouTube downloader (GUI), created with PyQt5, pytube and beautifulsoup4
 
 ### Features
