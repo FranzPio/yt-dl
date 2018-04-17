@@ -1,0 +1,42 @@
+version: build_{build}
+skip_tags: true
+install:
+- cmd: C:\\Python35\\python.exe -m pip install PyInstaller PyQt5==5.9.2 pytube beautifulsoup4
+build_script:
+- ps: >-
+    ren src\main.py yt-dl.py
+
+    C:\\Python35\\python.exe -m PyInstaller --noconfirm --windowed --icon "resources\ytdl_icon.ico" src\yt-dl.py
+
+    ren src\yt-dl.py main.py
+
+
+    $versionLine = Get-Content src\config.py | Where-Object { $_.Contains("VERSION") }
+
+    $versionString = ($versionLine -replace "VERSION = ", "") -replace '"', ""
+
+    $env:VERSION=$versionString
+
+
+    (Get-Content installer.iss) -replace "CURR_VERSION", $versionString | Set-Content installer.iss
+
+    &"C:\\Program Files (x86)\\Inno Setup 5\\ISCC.exe" installer.iss
+
+    $installerFileName = "yt-dl_$($versionString)_setup.exe"
+
+    Push-AppveyorArtifact $installerFileName
+
+
+    $zipFileName = "yt-dl_$($versionString)_win32_portable.zip"
+
+    7z.exe a $zipFileName dist/yt-dl
+
+    Push-AppveyorArtifact $zipFileName
+deploy:
+- provider: GitHub
+  tag: v$(VERSION)
+  release: v$(VERSION)
+  description: $(APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)
+  auth_token:
+    secure: 6d8AbjP+9AvFJNOExTMkBfPcQnz27CUeZAslBVZ03QM+S+LGVs4gHsV9I63WySbx
+  prerelease: true
