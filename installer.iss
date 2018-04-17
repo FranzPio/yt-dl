@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "yt-dl"
-#define MyAppVersion "0.16"
+#define MyAppVersion "CURR_VERSION"
 #define MyAppPublisher "Franz Piontek"
 #define MyAppURL "https://github.com/FranzPio/yt-dl"
 #define MyAppExeName "yt-dl.exe"
@@ -24,7 +24,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=resources\LICENSE.rtf
 OutputDir=.
-OutputBaseFilename=yt-dl_0.16_setup
+OutputBaseFilename=yt-dl_CURR_VERSION_setup
 SetupIconFile=resources\ytdl_icon.ico
 UninstallDisplayIcon={app}\yt-dl.exe
 ;Compression=lzma
