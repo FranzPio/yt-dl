@@ -5,30 +5,47 @@ only_commits:
     - src/
     - resources/
 
+# TODO: support multiple Python versions (3.6 in particular)
+#       -> as shown at https://packaging.python.org/guides/supporting-windows-using-appveyor/#appveyor-yml
 install:
-- ps: >-
+- cmd: >-
     C:\\Python35\\python.exe -m pip install PyQt5 pytube beautifulsoup4
+
     C:\\Python35\\python.exe -m pip install https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz
     
+# workaround; remove this once PyInstaller 3.4 stable is released
+
 build_script:
 - ps: >-
     ren src\main.py yt-dl.py
+
     C:\\Python35\\python.exe -m PyInstaller --noconfirm --windowed --icon "resources\ytdl_icon.ico" src\yt-dl.py
+
     ren src\yt-dl.py main.py
 
+
     $versionLine = Get-Content src\config.py | Where-Object { $_.Contains("VERSION") }
+
     $versionString = ($versionLine -replace "VERSION = ", "") -replace '"', ""
+
     $env:VERSION=$versionString
 
+
     (Get-Content installer.iss) -replace "CURR_VERSION", $versionString | Set-Content installer.iss
+
     &"C:\\Program Files (x86)\\Inno Setup 5\\ISCC.exe" installer.iss
+
     $installerFileName = "yt-dl_$($versionString)_setup.exe"
+
     Push-AppveyorArtifact $installerFileName
 
+
     $zipFileName = "yt-dl_$($versionString)_win32_portable.zip"
+
     7z.exe a $zipFileName dist/yt-dl
+
     Push-AppveyorArtifact $zipFileName
-    
+
 deploy:
 - provider: GitHub
   tag: v$(VERSION)
