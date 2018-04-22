@@ -191,11 +191,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 QtWidgets.qApp.setFont(default_font)
 
             elif new_style in (self.STYLE_FUSION, self.STYLE_FUSION_DARK):
-                # TODO: change background in palette of Fusion style
-                #       (brownish background color in Qt 5.9 = ugly, but 5.10 not working with PyInstaller yet)
-                #                                                    -> ugly windowsxp style, windowsvista not bundled
-
-                # TODO: make change persistent (some hidden config file...)
                 QtWidgets.qApp.setStyleSheet("")
 
                 fusion_style = QtWidgets.QStyleFactory.create("fusion")
