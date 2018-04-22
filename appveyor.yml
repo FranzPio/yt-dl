@@ -41,8 +41,10 @@ build_script:
 
 
     $zipFileName = "yt-dl_$($versionString)_win32_portable.zip"
+    
+    cd dist
 
-    7z.exe a $zipFileName dist/yt-dl
+    7z.exe a $zipFileName yt-dl
 
     Push-AppveyorArtifact $zipFileName
 
