@@ -10,8 +10,9 @@ only_commits:
 install:
 - cmd: >-
     C:\\Python35\\python.exe -m pip install PyQt5 pytube beautifulsoup4
-    # workaround; remove this once PyInstaller 3.4 stable is released
     C:\\Python35\\python.exe -m pip install https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz
+    
+# workaround; remove this once PyInstaller 3.4 stable is released
 
 build_script:
 - ps: >-
