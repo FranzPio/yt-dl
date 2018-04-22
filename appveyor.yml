@@ -6,7 +6,7 @@ only_commits:
     - resources/
 
 install:
-- cmd: >-
+- ps: >-
     C:\\Python35\\python.exe -m pip install PyQt5 pytube beautifulsoup4
     C:\\Python35\\python.exe -m pip install https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz
     
