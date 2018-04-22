@@ -4,13 +4,14 @@ only_commits:
   files:
     - src/
     - resources/
-    
+
 # TODO: support multiple Python versions (3.6 in particular)
 #       -> as shown at https://packaging.python.org/guides/supporting-windows-using-appveyor/#appveyor-yml
 install:
-- cmd: C:\\Python35\\python.exe -m pip install PyQt5 pytube beautifulsoup4
-# workaround; remove this once PyInstaller 3.4 stable is released
-- cmd: C:\\Python35\\python.exe -m pip install https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz
+- cmd: >-
+    C:\\Python35\\python.exe -m pip install PyQt5 pytube beautifulsoup4
+    # workaround; remove this once PyInstaller 3.4 stable is released
+    C:\\Python35\\python.exe -m pip install https://github.com/pyinstaller/pyinstaller/archive/develop.tar.gz
 
 build_script:
 - ps: >-
