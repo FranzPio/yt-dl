@@ -19,7 +19,7 @@ build_script:
 - ps: >-
     ren src\main.py yt-dl.py
 
-    C:\\Python35\\python.exe -m PyInstaller --noconfirm --windowed --debug --icon "resources\ytdl_icon.ico" src\yt-dl.py
+    C:\\Python35\\python.exe -m PyInstaller --noconfirm --console --debug --icon "resources\ytdl_icon.ico" src\yt-dl.py
 
     ren src\yt-dl.py main.py
 
