@@ -45,7 +45,7 @@ Updaten Sie die Anwendung oder besuchen Sie https://github.com/FranzPio/yt-dl f�
     <message>
         <location filename="../src/dialogs.py" line="122"/>
         <source>An easy-to-use YouTube downloader (GUI),&lt;br&gt;created with PyQt5, pytube and beautifulsoup4.&lt;br&gt;Loading GIF: &lt;a href=&quot;{1}&quot;&gt;{1}&lt;/a&gt;&lt;br&gt;Github page: &lt;a href=&quot;{2}&quot;&gt;{2}&lt;/a&gt;</source>
-        <translation>Ein einfach bedienbarer YouTube-Downloader (GUI),&lt;br&gt;erstellt mit PyQt5, pytube und beautifulsoup4.&lt;br&gt;Github-Seite: &lt;a href=&quot;{2}&quot;&gt;{2}&lt;/a&gt;</translation>
+        <translation>Ein einfach bedienbarer YouTube-Downloader (GUI),&lt;br&gt;erstellt mit PyQt5, pytube und beautifulsoup4.&lt;br&gt;Lade-GIF: &lt;a href=&quot;{1}&quot;&gt;{1}&lt;/a&gt;&lt;br&gt;Github-Seite: &lt;a href=&quot;{2}&quot;&gt;{2}&lt;/a&gt;</translation>
     </message>
 </context>
 <context>
@@ -76,122 +76,122 @@ Updaten Sie die Anwendung oder besuchen Sie https://github.com/FranzPio/yt-dl f�
         <translation>&amp;?</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="222"/>
+        <location filename="../src/main.py" line="217"/>
         <source>1. Enter URL</source>
         <translation>1. URL eingeben</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="230"/>
+        <location filename="../src/main.py" line="225"/>
         <source>URL of a YouTube video or playlist</source>
         <translation>URL von YouTube-Video oder Playlist</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="232"/>
+        <location filename="../src/main.py" line="227"/>
         <source>Find videos...</source>
         <translation>Videos suchen...</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="258"/>
+        <location filename="../src/main.py" line="253"/>
         <source>2. Select quality and format</source>
         <translation>2. Qualität und Format wählen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="529"/>
+        <location filename="../src/main.py" line="524"/>
         <source>Click &quot;Find videos...&quot; to continue.</source>
         <translation>Auf &quot;Videos suchen...&quot; klicken um fortzufahren.</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="290"/>
+        <location filename="../src/main.py" line="285"/>
         <source>3. Download videos</source>
         <translation>3. Videos downloaden</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="301"/>
+        <location filename="../src/main.py" line="296"/>
         <source>Click &quot;...&quot; to specify download destination.</source>
         <translation>Auf &quot;...&quot; klicken um Speicherort auszuwählen.</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="307"/>
+        <location filename="../src/main.py" line="302"/>
         <source>...</source>
         <translation>...</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="310"/>
+        <location filename="../src/main.py" line="305"/>
         <source>DOWNLOAD</source>
         <translation>DOWNLOAD</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="338"/>
+        <location filename="../src/main.py" line="333"/>
         <source>Choose download directory</source>
         <translation>Speicherort auswählen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="348"/>
+        <location filename="../src/main.py" line="343"/>
         <source>%s of %s MB</source>
         <translation>%s von %s MB</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="740"/>
+        <location filename="../src/main.py" line="735"/>
         <source>(%s/%s)</source>
         <translation>(%s/%s)</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="366"/>
+        <location filename="../src/main.py" line="361"/>
         <source>Video downloaded successfully!</source>
         <translation>Video erfolgreich heruntergeladen!</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="370"/>
+        <location filename="../src/main.py" line="365"/>
         <source>All videos downloaded successfully!</source>
         <translation>Alle Videos erfolgreich heruntergeladen!</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="374"/>
+        <location filename="../src/main.py" line="369"/>
         <source>%s of %s videos downloaded successfully!</source>
         <translation>%s von %s Videos erfolgreich heruntergeladen!</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="520"/>
+        <location filename="../src/main.py" line="515"/>
         <source>4. Post-processing</source>
         <translation>4. Nachbearbeiten</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="533"/>
+        <location filename="../src/main.py" line="528"/>
         <source>Extract audio only</source>
         <translation>Audio nur extrahieren</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="539"/>
+        <location filename="../src/main.py" line="534"/>
         <source>Convert audio</source>
         <translation>Audio konvertieren</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="606"/>
+        <location filename="../src/main.py" line="601"/>
         <source>CONVERT</source>
         <translation>KONVERTIEREN</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="585"/>
+        <location filename="../src/main.py" line="580"/>
         <source>EXTRACT</source>
         <translation>EXTRAHIEREN</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="590"/>
+        <location filename="../src/main.py" line="585"/>
         <source>Detecting audio format...</source>
         <translation>Audioformat wird ermittelt...</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="674"/>
+        <location filename="../src/main.py" line="669"/>
         <source>Audio format: </source>
         <translation>Audioformat: </translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="674"/>
+        <location filename="../src/main.py" line="669"/>
         <source>Audio formats: </source>
         <translation>Audioformate: </translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="733"/>
+        <location filename="../src/main.py" line="728"/>
         <source>Info</source>
         <translation>Info</translation>
     </message>
@@ -216,42 +216,42 @@ Updaten Sie die Anwendung oder besuchen Sie https://github.com/FranzPio/yt-dl f�
         <translation>&amp;Optionen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="503"/>
+        <location filename="../src/main.py" line="498"/>
         <source>Delete original video file</source>
         <translation>Ursprüngliche Videodatei löschen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="478"/>
+        <location filename="../src/main.py" line="473"/>
         <source>Options</source>
         <translation>Optionen</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="485"/>
+        <location filename="../src/main.py" line="480"/>
         <source>Compression method:</source>
         <translation>Kompressionsmethode:</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="491"/>
+        <location filename="../src/main.py" line="486"/>
         <source>Bitrate:</source>
         <translation>Bitrate:</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="622"/>
+        <location filename="../src/main.py" line="617"/>
         <source>%s kbps</source>
         <translation>%s kbit/s</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="627"/>
+        <location filename="../src/main.py" line="622"/>
         <source>kbps</source>
         <translation>kbit/s</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="733"/>
+        <location filename="../src/main.py" line="728"/>
         <source>Finished converting.</source>
         <translation>Konvertieren abgeschlossen.</translation>
     </message>
     <message>
-        <location filename="../src/main.py" line="737"/>
+        <location filename="../src/main.py" line="732"/>
         <source>%s of %s</source>
         <translation>%s von %s</translation>
     </message>
