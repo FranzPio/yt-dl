@@ -52,7 +52,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.splashie = show_splash(QtGui.QPixmap(":/ytdl_splash_screen"), self)
+        self.splashie = show_splash(QtGui.QPixmap(":/ytdl_splash_screen"), self, vfont_size=default_font.pointSize())
         QtCore.QTimer.singleShot(1200, self.show_window)
 
         self.threads_workers = collections.OrderedDict()
@@ -87,6 +87,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                         thread.wait(20)
 
         super().closeEvent(*args, **kwargs)
+        sys.exit(0)
 
     def create_thread(self, WorkerClass, *args, **kwargs):
         worker = WorkerClass(*args, **kwargs)
