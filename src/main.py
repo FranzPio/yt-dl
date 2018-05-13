@@ -7,7 +7,7 @@ import traceback
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-from config import APP_PATH, USER_DIR, SFPATH
+from config import APP_PATH, SFPATH
 from converter import FFmpeg
 from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
 from download import Downloader
@@ -181,12 +181,11 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         if new_style != current_style:
             if new_style == self.STYLE_DEFAULT:
-                # TODO: maybe remove default style in future (at least on Windows)
                 QtWidgets.qApp.setStyleSheet("")
 
                 former_style = QtWidgets.QStyleFactory.create(default_style)
                 QtWidgets.qApp.setStyle(former_style)
-                QtWidgets.qApp.setPalette(former_style.standardPalette())
+                QtWidgets.qApp.setPalette(default_palette)
 
                 QtWidgets.qApp.setFont(default_font)
 
@@ -196,7 +195,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 fusion_style = QtWidgets.QStyleFactory.create("fusion")
                 QtWidgets.qApp.setStyle(fusion_style)
 
-                font = QtGui.QFont("Fira Sans", 9)
+                font = QtGui.QFont("Fira Sans", default_font.pointSize())
                 QtWidgets.qApp.setFont(font)
 
                 if new_style == self.STYLE_FUSION_DARK and not current_style == self.STYLE_FUSION_DARK:
@@ -210,6 +209,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
             with SettingsFile(SFPATH) as sfile:
                 sfile.write(style=new_style)
+
             self.setMinimumSize(self.sizeHint())
             self.resize(self.sizeHint())
 
@@ -839,7 +839,7 @@ def load_style_settings():
 
 
 def startup():
-    global window, default_style, default_font
+    global window, default_style, default_palette, default_font
     logfile = os.path.join(APP_PATH, "yt-dl.log")
     if os.path.isfile(logfile):
         os.remove(logfile)
@@ -848,6 +848,7 @@ def startup():
     app = QtWidgets.QApplication(sys.argv)
 
     default_style = app.style().objectName()
+    default_palette = app.palette()
 
     if sys.platform == "win32":
         default_font = QtGui.QFont("Segoe UI", 9)
