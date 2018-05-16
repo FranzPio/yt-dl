@@ -7,11 +7,11 @@ import traceback
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-from config import APP_PATH, SFPATH
+from config import APP_PATH, SETTINGS_FPATH
 from converter import FFmpeg
 from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
 from download import Downloader
-from utils import LineEdit, ElidedLabel, FusionDarkPalette, SettingsFile
+from utils import LineEdit, ElidedLabel, FusionDarkPalette, SettingsFile, StubClass
 from youtube import YouTube
 import resources
 
@@ -55,7 +55,16 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.splashie = show_splash(QtGui.QPixmap(":/ytdl_splash_screen"), self, vfont_size=default_font.pointSize())
         QtCore.QTimer.singleShot(1200, self.show_window)
 
+        if sys.platform == "win32":
+            from PyQt5 import QtWinExtras
+            self.tb_btn = QtWinExtras.QWinTaskbarButton(self)
+            self.tb_btn.setWindow(self.windowHandle())
+            self.tb_progress = self.tb_btn.progress()
+        else:
+            self.tb_btn, self.tb_progress = StubClass()
+
         self.threads_workers = collections.OrderedDict()
+        self.styles_menus = {}
 
         self.videos = None
         self.playlist_videos = None
@@ -165,6 +174,10 @@ class DownloadWindow(QtWidgets.QMainWindow):
         help_menu = menu_bar.addMenu(self.tr("&?"))
         help_menu.addAction(update_act)
         help_menu.addAction(about_act)
+
+        self.styles_menus.update({self.STYLE_DEFAULT: default_style_act,
+                                  self.STYLE_FUSION: fusion_style_act,
+                                  self.STYLE_FUSION_DARK: dark_style_act})
         return menu_bar
 
     def update_dialog(self):
@@ -176,8 +189,6 @@ class DownloadWindow(QtWidgets.QMainWindow):
         about_dlg.exec()
 
     def change_style(self, new_style):
-        # FIXME: since this "signal" is called manually in load_style_settings(), we can't check the menu entry like this
-        # self.sender().setChecked(True)
         current_style = QtWidgets.qApp.style().objectName()
 
         if new_style != current_style:
@@ -208,7 +219,9 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     palette.setColor(QtGui.QPalette.Inactive, QtGui.QPalette.Highlight, QtGui.QColor(240, 240, 240))
                     QtWidgets.qApp.setPalette(palette)
 
-            with SettingsFile(SFPATH) as sfile:
+            self.styles_menus[new_style].setChecked(True)
+
+            with SettingsFile(SETTINGS_FPATH) as sfile:
                 sfile.write(style=new_style)
 
             self.setMinimumSize(self.sizeHint())
@@ -340,11 +353,19 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.save_box.download_btn.setEnabled(True)
 
     def update_download_progress(self, bytes_downloaded, stream_fsize, videos_downloaded, videos_total):
+        if videos_total == 1:
+            self.tb_progress.setMaximum(stream_fsize)
+            self.tb_progress.setValue(bytes_downloaded)
+        else:
+            self.tb_progress.setMaximum(videos_total)
+            self.tb_progress.setValue(videos_downloaded - 1)
+
         self.save_box.progress_bar.setMaximum(stream_fsize)
+        self.save_box.progress_bar.setValue(bytes_downloaded)
         self.save_box.progress_bar.setFormat(self.tr("%s of %s MB") %
                                              (round(self.save_box.progress_bar.value() / 1000000, 1),
                                               round(self.save_box.progress_bar.maximum() / 1000000, 1)))
-        self.save_box.progress_bar.setValue(bytes_downloaded)
+
         self.save_box.progress_lbl.setText(self.tr("(%s/%s)") % (videos_downloaded, videos_total))
 
     def toggle_download_progress_pulse(self, should_pulse):
@@ -354,6 +375,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.save_box.progress_bar.setRange(0, 1)
 
     def on_download_success(self, successful_downloads, videos_total):
+        self.tb_progress.hide()
+        QtWidgets.qApp.alert(self)
         self.postprocess_box.extract_rbtn.setEnabled(True)
         self.postprocess_box.convert_rbtn.setEnabled(True)
 
@@ -417,6 +440,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     # thread.finished.connect(lambda: print("finished!"))
 
                     thread.start()
+                    self.tb_progress.show()
             else:
                 checked_videos = []
                 for index, video in enumerate(self.playlist_videos):
@@ -436,6 +460,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     # thread.finished.connect(lambda: print("finished!"))
 
                     thread.start()
+                    self.tb_progress.show()
 
     def create_postprocess_box(self):
         def create_extract_box():
@@ -682,6 +707,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 thread.started.connect(functools.partial(converter.extract_audio,
                                                          codec, vconv=index + 1, vtotal=len(self.audio_codecs)))
 
+                self.tb_progress.show()
                 self.postprocess_box.progress_bar.show()
                 self.postprocess_box.progress_lbl.show()
 
@@ -710,6 +736,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 thread.started.connect(functools.partial(
                     converter.convert_audio, ".mp3", self.compress_method, self.bitrate, index + 1, len(path_list)))
 
+                self.tb_progress.show()
                 self.postprocess_box.progress_bar.show()
                 self.postprocess_box.progress_lbl.show()
 
@@ -726,9 +753,18 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 Downloader.last_downloaded.clear()
                 self.postprocess_box.convert_btn.setDisabled(True)
 
+        self.tb_progress.hide()
+        QtWidgets.qApp.alert(self)
         show_msgbox(self.tr("Info"), self.tr("Finished converting."), QtWidgets.QMessageBox.Information)
 
     def update_convert_progress(self, current_duration, total_duration, videos_converted, videos_total):
+        if videos_total == 1:
+            self.tb_progress.setMaximum(total_duration)
+            self.tb_progress.setValue(current_duration)
+        else:
+            self.tb_progress.setMaximum(videos_total)
+            self.tb_progress.setValue(videos_converted - 1)
+
         self.postprocess_box.progress_bar.setMaximum(total_duration.total_seconds())
         self.postprocess_box.progress_bar.setFormat(self.tr("%s of %s") %
                                                     (str(current_duration), str(total_duration)))
@@ -833,7 +869,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
 
 def load_style_settings():
-    with SettingsFile(SFPATH) as sfile:
+    with SettingsFile(SETTINGS_FPATH) as sfile:
         saved_style = sfile.read("style")
         if saved_style is not None:
             window.change_style(saved_style)

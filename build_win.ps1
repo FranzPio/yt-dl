@@ -7,6 +7,7 @@ $versionString = ($versionLine -replace "VERSION = ", "") -replace '"', ""
 
 (Get-Content installer.iss) -replace "CURR_VERSION", $versionString | Set-Content installer.iss
 &"C:\\Program Files (x86)\\Inno Setup 5\\ISCC.exe" installer.iss
+(Get-Content installer.iss) -replace $versionString, "CURR_VERSION" | Set-Content installer.iss
 
 $zipFileName = "yt-dl_$($versionString)_win32_portable.zip"
 cd dist
