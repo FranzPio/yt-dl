@@ -759,8 +759,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     def update_convert_progress(self, current_duration, total_duration, videos_converted, videos_total):
         if videos_total == 1:
-            self.tb_progress.setMaximum(total_duration)
-            self.tb_progress.setValue(current_duration)
+            self.tb_progress.setMaximum(total_duration.total_seconds())
+            self.tb_progress.setValue(current_duration.total_seconds())
         else:
             self.tb_progress.setMaximum(videos_total)
             self.tb_progress.setValue(videos_converted - 1)
