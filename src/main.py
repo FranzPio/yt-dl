@@ -61,7 +61,8 @@ class DownloadWindow(QtWidgets.QMainWindow):
             self.tb_btn.setWindow(self.windowHandle())
             self.tb_progress = self.tb_btn.progress()
         else:
-            self.tb_btn, self.tb_progress = StubClass()
+            self.tb_btn = StubClass()
+            self.tb_progress = StubClass()
 
         self.threads_workers = collections.OrderedDict()
         self.styles_menus = {}
