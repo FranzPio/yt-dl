@@ -4,6 +4,45 @@ import os.path
 from PyQt5 import QtCore, QtWidgets, QtGui
 
 
+def get_main_window(class_name):
+    toplevel_widgets = QtWidgets.qApp.topLevelWidgets()
+    for widget in toplevel_widgets:
+        if widget.__class__.__name__ == class_name:
+            return widget
+    return None
+
+
+def get_download_window():
+    return get_main_window("DownloadWindow")
+
+
+def setup_palette(color, widget_list=None, color_role=QtGui.QPalette.Highlight):
+    palette = QtGui.QPalette()
+    palette.setColor(QtGui.QPalette.Active, color_role, color)
+    if widget_list:
+        for widget in widget_list:
+            QtWidgets.qApp.setPalette(palette, widget)
+    else:
+        QtWidgets.qApp.setPalette(palette)
+
+
+class StubClass:
+    def __init__(self, *args, **kwargs):
+        pass
+    def show(self):
+        pass
+    def hide(self):
+        pass
+    def setMinimum(self, *args):
+        pass
+    def setMaximum(self, *args):
+        pass
+    def setValue(self, *args):
+        pass
+    def setRange(self, *args):
+        pass
+
+
 # probably buffer / queue changes since writing to disk might not be fast enough (???)
 class SettingsFile:
     def __init__(self, fpath):
@@ -42,28 +81,6 @@ class SettingsFile:
         sdict.update(kwargs)
         self.clear()
         json.dump(sdict, self.file)
-
-
-def get_main_window(class_name):
-    toplevel_widgets = QtWidgets.qApp.topLevelWidgets()
-    for widget in toplevel_widgets:
-        if widget.__class__.__name__ == class_name:
-            return widget
-    return None
-
-
-def get_download_window():
-    return get_main_window("DownloadWindow")
-
-
-def setup_palette(color, widget_list=None, color_role=QtGui.QPalette.Highlight):
-    palette = QtGui.QPalette()
-    palette.setColor(QtGui.QPalette.Active, color_role, color)
-    if widget_list:
-        for widget in widget_list:
-            QtWidgets.qApp.setPalette(palette, widget)
-    else:
-        QtWidgets.qApp.setPalette(palette)
 
 
 class FusionDarkPalette(QtGui.QPalette):

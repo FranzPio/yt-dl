@@ -1,7 +1,7 @@
 import os.path
 import sys
 
-VERSION = "0.16.3"
+VERSION = "0.17"
 IS_FROZEN = hasattr(sys, "frozen")
 
 if IS_FROZEN:
@@ -14,7 +14,7 @@ else:
 APP_PATH = os.path.dirname(FILE)
 USER_DIR = os.path.expanduser("~")
 
-SFPATH = os.path.join(USER_DIR, ".ytdl_config")
+SETTINGS_FPATH = os.path.join(USER_DIR, ".ytdl_config")
 
 GPL_URL = "http://www.gnu.org/licenses/gpl.html"
 ZIP_URL = "https://github.com/FranzPio/yt-dl/zipball/master/"

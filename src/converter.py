@@ -8,6 +8,15 @@ import sys
 from PyQt5 import QtCore, QtWidgets
 
 
+if hasattr(subprocess, "STARTUPINFO"):
+    # workaround: on Windows, subprocess calls always open cmd window when app is frozen (annoying)
+    # taken from https://github.com/pyinstaller/pyinstaller/wiki/Recipe-subprocess
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+else:
+    si = None
+
+
 def sexagesimal_to_timedelta(time_str):
     timedelta = datetime.timedelta(hours=int(time_str.split(":")[0]),
                                    minutes=int(time_str.split(":")[1]),
@@ -80,7 +89,7 @@ class FFmpeg(QtCore.QObject):
                                         "-i", self.path,
                                         compress_method, str(quality),
                                         ".".join(self.path.split(".")[:-1]) + file_ext],
-                                       stderr=subprocess.PIPE, universal_newlines=True)
+                                       stderr=subprocess.PIPE, universal_newlines=True, startupinfo=si)
 
             total_duration = self._get_stream_duration("a:0")
 
@@ -88,8 +97,6 @@ class FFmpeg(QtCore.QObject):
                 if not self.thread().isInterruptionRequested():
                     if not line.startswith("size="):
                         continue
-                        # print(line, end="")
-                        # debug output; to be removed later on
                     else:
                         kb_conv, duration, bitrate, speed = self._parse_progress_output(line)
                         # print(str(duration), "of", str(total_duration), " | ",
@@ -129,7 +136,7 @@ class FFmpeg(QtCore.QObject):
                                         "-vn",
                                         "-codec:a", "copy",
                                         ".".join(self.path.split(".")[:-1]) + self.file_ext],
-                                       stderr=subprocess.PIPE, universal_newlines=True)
+                                       stderr=subprocess.PIPE, universal_newlines=True, startupinfo=si)
 
             total_duration = self._get_stream_duration("a:0")
 
@@ -167,7 +174,7 @@ class FFmpeg(QtCore.QObject):
                                         "-show_entries", "stream=duration",
                                         "-sexagesimal",
                                         "-print_format", "csv=p=0",
-                                        self.path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                        self.path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, startupinfo=si)
             stdout, stderr = process.communicate()
             if stdout:
                 stream_duration = sexagesimal_to_timedelta(stdout.decode("utf-8").strip())
@@ -184,7 +191,7 @@ class FFmpeg(QtCore.QObject):
                                         "-map", stream,
                                         "-codec", "copy",
                                         "-f", "null",
-                                        "-"], stderr=subprocess.PIPE, universal_newlines=True)
+                                        "-"], stderr=subprocess.PIPE, universal_newlines=True, startupinfo=si)
             for line in process.stderr:
                 print(line)
                 if not line.startswith("video:"):
@@ -225,7 +232,7 @@ class FFmpeg(QtCore.QObject):
         # bitrate = float(bitrate_str)
         # speed = float(speed_str)
 
-        # TODO: investigate: above didn't seem to work on Ubuntu 16.04, probably due to an older version of ffmpeg in the sources
+        # TODO: above didn't seem to work on Ubuntu 16.04, probably due to an older version of ffmpeg in the sources
         #       -> workaround below
         kb_conv = int(progress_list[0])
         duration = sexagesimal_to_timedelta(progress_list[1])
@@ -241,7 +248,7 @@ class FFmpeg(QtCore.QObject):
                                         "-select_streams", "a:0",
                                         "-show_entries", "stream=codec_name",
                                         "-print_format", "csv=p=0",
-                                        self.path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                        self.path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, startupinfo=si)
             stdout, stderr = process.communicate()
             if stdout:
                 audio_codec = stdout.decode("utf-8").strip()
