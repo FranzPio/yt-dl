@@ -66,6 +66,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
         self.threads_workers = collections.OrderedDict()
         self.styles_menus = {}
+        self.should_restart = False
 
         self.videos = None
         self.playlist_videos = None
@@ -87,17 +88,27 @@ class DownloadWindow(QtWidgets.QMainWindow):
         self.raise_()
         self.splashie.finish(self)
 
-    def closeEvent(self, *args, **kwargs):
+    def toggle_restart(self, restart):
+        self.should_restart = restart
+
+    def stop_running_threads(self):
         if self.threads_workers:
             for thread, worker in self.threads_workers.items():
                 if isinstance(worker, FFmpeg):
                     thread.requestInterruption()
-                    while not thread.isFinished():
+                    for _ in range(5):
                         QtWidgets.qApp.processEvents()
-                        thread.wait(20)
+                        thread.wait(200)
+                        if thread.isFinished():
+                            break
+                    else:
+                        thread.terminate()
 
+    def closeEvent(self, *args, **kwargs):
+        self.stop_running_threads()
         super().closeEvent(*args, **kwargs)
-        sys.exit(0)
+        if not self.should_restart:
+            sys.exit(0)
 
     def create_thread(self, WorkerClass, *args, **kwargs):
         worker = WorkerClass(*args, **kwargs)
@@ -183,6 +194,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
 
     def update_dialog(self):
         update_dlg = UpdateDialog(self)
+        update_dlg.restart_wanted.connect(self.toggle_restart)
         update_dlg.exec()
 
     def about_dialog(self):
@@ -441,6 +453,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     # thread.finished.connect(lambda: print("finished!"))
 
                     thread.start()
+                    self.tb_progress.reset()
                     self.tb_progress.show()
             else:
                 checked_videos = []
@@ -461,6 +474,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                     # thread.finished.connect(lambda: print("finished!"))
 
                     thread.start()
+                    self.tb_progress.reset()
                     self.tb_progress.show()
 
     def create_postprocess_box(self):
@@ -708,6 +722,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 thread.started.connect(functools.partial(converter.extract_audio,
                                                          codec, vconv=index + 1, vtotal=len(self.audio_codecs)))
 
+                self.tb_progress.reset()
                 self.tb_progress.show()
                 self.postprocess_box.progress_bar.show()
                 self.postprocess_box.progress_lbl.show()
@@ -737,6 +752,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
                 thread.started.connect(functools.partial(
                     converter.convert_audio, ".mp3", self.compress_method, self.bitrate, index + 1, len(path_list)))
 
+                self.tb_progress.reset()
                 self.tb_progress.show()
                 self.postprocess_box.progress_bar.show()
                 self.postprocess_box.progress_lbl.show()
@@ -882,8 +898,8 @@ def startup():
     if os.path.isfile(logfile):
         os.remove(logfile)
 
-    # QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_DisableWindowContextHelpButton)  # only works with Qt >=5.10
-    app = QtWidgets.QApplication(sys.argv)
+    # QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_DisableWindowContextHelpButton)  # only works with Qt >=5.10;
+    app = QtWidgets.QApplication(sys.argv)                                              # execute only if condition is met
 
     default_style = app.style().objectName()
     default_palette = app.palette()

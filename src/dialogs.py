@@ -3,7 +3,7 @@ import traceback
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-from config import VERSION, ICONS8_URL, LOADINGIO_URL, GITHUB_URL, GPL_URL, ZIP_URL, EXE
+from config import VERSION, ICONS8_URL, LOADINGIO_URL, GITHUB_URL, GPL_URL, EXE
 from updater import Update
 from utils import get_download_window
 
@@ -199,6 +199,8 @@ class AboutDialog(QtWidgets.QDialog):
 
 
 class UpdateDialog(QtWidgets.QDialog):
+    restart_wanted = QtCore.pyqtSignal(bool)
+
     def __init__(self, parent=None):
         super().__init__(parent, QtCore.Qt.FramelessWindowHint)
         self.init_ui()
@@ -228,7 +230,7 @@ class UpdateDialog(QtWidgets.QDialog):
     def start_update(self):
         self.spinning_wheel.start()
 
-        self.updater = Update(ZIP_URL)
+        self.updater = Update()
         self.thread = QtCore.QThread()
         self.updater.moveToThread(self.thread)
         self.updater.finished.connect(self.close)
@@ -259,8 +261,9 @@ class UpdateDialog(QtWidgets.QDialog):
         self.close()
         self.restart()
 
-    @staticmethod
-    def restart():
+    def restart(self):
+        self.restart_wanted.emit(True)
+        QtWidgets.qApp.processEvents()
         QtWidgets.qApp.closeAllWindows()
         QtWidgets.qApp.quit()
         subprocess.run(EXE)

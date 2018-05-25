@@ -1,7 +1,7 @@
 import os.path
 import sys
 
-VERSION = "0.17"
+VERSION = "0.17.1"
 IS_FROZEN = hasattr(sys, "frozen")
 
 if IS_FROZEN:
@@ -16,9 +16,13 @@ USER_DIR = os.path.expanduser("~")
 
 SETTINGS_FPATH = os.path.join(USER_DIR, ".ytdl_config")
 
+GITHUB_USER = "FranzPio"
+GITHUB_REPO = "yt-dl"
+
 GPL_URL = "http://www.gnu.org/licenses/gpl.html"
-ZIP_URL = "https://github.com/FranzPio/yt-dl/zipball/master/"
-GITHUB_URL = "https://github.com/FranzPio/yt-dl"
+ZIP_URL = "https://github.com/%s/%s/zipball/master/" % (GITHUB_USER, GITHUB_REPO)
+GITHUB_URL = "https://github.com/%s/%s" % (GITHUB_USER, GITHUB_REPO)
+RELEASES_URL = "https://api.github.com/repos/%s/%s/releases" % (GITHUB_USER, GITHUB_REPO)
 ICONS8_URL = "https://icons8.com"
 LOADINGIO_URL = "https://loading.io"
 
