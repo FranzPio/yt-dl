@@ -1,7 +1,7 @@
 import os.path
 import sys
 
-VERSION = "0.17.1"
+VERSION = "0.18"
 IS_FROZEN = hasattr(sys, "frozen")
 
 if IS_FROZEN:
@@ -15,6 +15,8 @@ APP_PATH = os.path.dirname(FILE)
 USER_DIR = os.path.expanduser("~")
 
 SETTINGS_FPATH = os.path.join(USER_DIR, ".ytdl_config")
+
+YTDL_GUID = "{CA3E4595-F7A9-4A36-A786-8332FB6428EF}_is1"
 
 GITHUB_USER = "FranzPio"
 GITHUB_REPO = "yt-dl"

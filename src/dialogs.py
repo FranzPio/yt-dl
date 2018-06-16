@@ -4,7 +4,7 @@ import traceback
 from PyQt5 import QtCore, QtWidgets, QtGui
 
 from config import VERSION, ICONS8_URL, LOADINGIO_URL, GITHUB_URL, GPL_URL, EXE
-from updater import Update
+from update import Updater
 from utils import get_download_window
 
 license_txt = None
@@ -202,46 +202,65 @@ class UpdateDialog(QtWidgets.QDialog):
     restart_wanted = QtCore.pyqtSignal(bool)
 
     def __init__(self, parent=None):
-        super().__init__(parent, QtCore.Qt.FramelessWindowHint)
+        super().__init__(parent, QtCore.Qt.CustomizeWindowHint | QtCore.Qt.Sheet)
         self.init_ui()
         self.start_update()
 
     def init_ui(self):
-        vbox = QtWidgets.QVBoxLayout()
-        hbox1 = QtWidgets.QHBoxLayout()
-        hbox2 = QtWidgets.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
+        vbox1 = QtWidgets.QVBoxLayout()
+        vbox2 = QtWidgets.QVBoxLayout()
 
         self.loading_indicator = QtWidgets.QLabel()
         self.spinning_wheel = QtGui.QMovie(":/rolling.gif")
         self.spinning_wheel.setScaledSize(QtCore.QSize(32, 32))
         self.loading_indicator.setMovie(self.spinning_wheel)
 
-        hbox1.addWidget(self.loading_indicator)
+        vbox1.addWidget(self.loading_indicator, alignment=QtCore.Qt.AlignTop)
 
         self.status_lbl = QtWidgets.QLabel()
         # self.update_dlg.status_lbl.setWordWrap(True)
+        self.progress_bar = QtWidgets.QProgressBar()
+        self.progress_bar.hide()
 
-        hbox2.addWidget(self.status_lbl)
+        vbox2.addWidget(self.status_lbl)
+        vbox2.addSpacing(5)
+        vbox2.addWidget(self.progress_bar)
 
-        vbox.addLayout(hbox1)
-        vbox.addLayout(hbox2)
-        self.setLayout(vbox)
+        hbox.addLayout(vbox1)
+        hbox.addSpacing(10)
+        hbox.addLayout(vbox2)
+        self.setLayout(hbox)
 
     def start_update(self):
         self.spinning_wheel.start()
 
-        self.updater = Update()
+        self.updater = Updater()
         self.thread = QtCore.QThread()
         self.updater.moveToThread(self.thread)
         self.updater.finished.connect(self.close)
-        self.updater.status_update.connect(self.status_lbl.setText)
+        self.updater.status_update.connect(self.update_status)
         self.updater.success.connect(self.success)
         self.updater.error.connect(show_msgbox)
         self.updater.information.connect(show_msgbox)
+        self.updater.progress.connect(self.update_progress)
 
         self.thread.started.connect(self.updater.check_for_updates)
 
         self.thread.start()
+
+    def update_status(self, new_status):
+        self.status_lbl.setText(new_status)
+        self.progress_bar.hide()
+        # self.update()
+        # QtWidgets.qApp.processEvents()
+
+    def update_progress(self, bytes_transferred, bytes_total):
+        self.progress_bar.show()
+        self.progress_bar.setMaximum(bytes_total)
+        self.progress_bar.setValue(bytes_transferred)
+        self.progress_bar.setFormat(self.tr("%s of %s MB") % (round(self.progress_bar.value() / 1000000, 1),
+                                                              round(self.progress_bar.maximum() / 1000000, 1)))
 
     def keyPressEvent(self, evt):
         if evt.key() == QtCore.Qt.Key_Escape:

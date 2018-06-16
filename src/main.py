@@ -8,7 +8,7 @@ import traceback
 from PyQt5 import QtCore, QtWidgets, QtGui
 
 from config import APP_PATH, SETTINGS_FPATH
-from converter import FFmpeg
+from convert import FFmpeg
 from dialogs import UpdateDialog, AboutDialog, show_msgbox, show_splash
 from download import Downloader
 from utils import LineEdit, ElidedLabel, FusionDarkPalette, SettingsFile, StubClass
@@ -95,6 +95,7 @@ class DownloadWindow(QtWidgets.QMainWindow):
         if self.threads_workers:
             for thread, worker in self.threads_workers.items():
                 if isinstance(worker, FFmpeg):
+                    # TODO: every worker class should implement exit on interruptionRequested()
                     thread.requestInterruption()
                     for _ in range(5):
                         QtWidgets.qApp.processEvents()

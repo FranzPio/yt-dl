@@ -13,4 +13,4 @@ $zipFileName = "yt-dl_$($versionString)_win32_portable.zip"
 cd dist
 &"C:\\Program Files\\7-Zip\\7z.exe" a $zipFileName yt-dl
 cd ..
-Move-Item -Path "dist\$($zipFileName)" -Destination .
+Move-Item -Path "dist\$($zipFileName)" -Force -Destination .
