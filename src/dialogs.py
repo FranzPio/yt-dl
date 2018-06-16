@@ -222,6 +222,9 @@ class UpdateDialog(QtWidgets.QDialog):
         # self.update_dlg.status_lbl.setWordWrap(True)
         self.progress_bar = QtWidgets.QProgressBar()
         self.progress_bar.hide()
+        sp_retain_space = self.progress_bar.sizePolicy()
+        sp_retain_space.setRetainSizeWhenHidden(True)
+        self.progress_bar.setSizePolicy(sp_retain_space)
 
         vbox2.addWidget(self.status_lbl)
         vbox2.addSpacing(5)
@@ -252,6 +255,7 @@ class UpdateDialog(QtWidgets.QDialog):
     def update_status(self, new_status):
         self.status_lbl.setText(new_status)
         self.progress_bar.hide()
+        # self.resize(self.sizeHint())
         # self.update()
         # QtWidgets.qApp.processEvents()
 
