@@ -33,6 +33,8 @@ class StubClass:
         pass
     def hide(self):
         pass
+    def reset(self):
+        pass
     def setMinimum(self, *args):
         pass
     def setMaximum(self, *args):
