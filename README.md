@@ -1,4 +1,10 @@
 # yt-dl
+**WARNING: This project is no longer maintained!**  
+Using it nonetheless is strongly discouraged and will result in nothing but disappointment.  
+A web version is currently being worked on, though, so that's something...aight?
+
+---
+
 easy-to-use YouTube downloader (GUI), created with PyQt5, pytube and beautifulsoup4
 
 ### Features
